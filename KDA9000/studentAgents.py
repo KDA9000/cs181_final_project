@@ -177,37 +177,44 @@ class KDA9000Agent(BaseStudentAgent):
     def registerInitialState(self, gameState):
         super(KDA9000Agent, self).registerInitialState(gameState)
 
+        # Here, you may do any necessary initialization, e.g., import some
+        # parameters you've learned, as in the following commented out lines
+        # learned_params = cPickle.load("myparams.pkl")
+        # learned_params = np.load("myparams.npy")    
+        clfGhost = joblib.load('SVM_multi_linear_size_488162.pkl')
+
+    def classifyGhost(self, clf, feat_v, quad):
+        pass
+
+    def classifyCapsule(self, clf, feat_v):
+        pass
+        
     def chooseAction(self, observedState):
-        '''
-        Actually do RL here
-        '''
-        return Directions.STOP
-
-    # classifies a ghost based on feature vector given a dictionary of gaussian
-    # parameters for the gaussian distribution of each (latent_class, feature_index) key pair
-    # returns most likley class
-    def classify_ghost(gaussian_dict, feature_vector):
-        max_prob = -1
-        most_likely_class = -1
-        for i in xrange(5):
-            if i == 4:
-                latent_class = 5
-            else:
-                latent_class = i
-            prob = 1.
-            # only consider the first 10 features cause they're the only Gaussian ones
-            for feature_index in xrange(1, 11):
-                prob *= gaussian_pdf(guassian_dict[(latent_class, feature_index)], feature_vector[feature_index])
-            if prob > max_prob:
-                max_prob = prob
-                most_likely_class = latent_class
-        return most_likely_class
-
-    # finds the PDF of input x given (mean, std) pair for Gaussian distribution
-    def gaussian_pdf((mean, std) ,x):
-        var = float(std) ** 2
-        denom = std * ((math.pi * 2) ** 0.5)
-        num = math.exp(-((float(x) - float(mean))**2) / (2*var))
-        return num / denom
-            
+        """
+        Here, choose pacman's next action based on the current state of the game.
+        This is where all the action happens.
+        
+        This silly pacman agent will move away from the ghost that it is closest
+        to. This is not a very good strategy, and completely ignores the features of
+        the ghosts and the capsules; it is just designed to give you an example.
+        """
+        pacmanPosition = observedState.getPacmanPosition()
+        ghost_states = observedState.getGhostStates() # states have getPosition() and getFeatures() methods
+        legalActs = [a for a in observedState.getLegalPacmanActions()]
+        ghost_dists = np.array([self.distancer.getDistance(pacmanPosition,gs.getPosition()) 
+                              for gs in ghost_states])
+        # find the closest ghost by sorting the distances
+        closest_idx = sorted(zip(range(len(ghost_states)),ghost_dists), key=lambda t: t[1])[0][0]
+        # take the action that minimizes distance to the current closest ghost
+        best_action = Directions.STOP
+        best_dist = -np.inf
+        for la in legalActs:
+            if la == Directions.STOP:
+                continue
+            successor_pos = Actions.getSuccessor(pacmanPosition,la)
+            new_dist = self.distancer.getDistance(successor_pos,ghost_states[closest_idx].getPosition())
+            if new_dist > best_dist:
+                best_action = la
+                best_dist = new_dist
+        return best_action
                 
