@@ -188,8 +188,14 @@ class KDA9000Agent(BaseStudentAgent):
 
     def classifyCapsule(self, clf, feat_v):
         pass
-        
+
+    # returns numpy array of [f1(s,a), f2(s,a), ..., fj(s,a)]
+    def get_regression_feature(self, observedState, action):
+        pass
+
     def chooseAction(self, observedState):
+        feat_v = get_regression_feature(observedState, action)
+        
         """
         Here, choose pacman's next action based on the current state of the game.
         This is where all the action happens.
