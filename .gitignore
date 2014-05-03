@@ -21,6 +21,7 @@ pacman.py
 util.py
 util.pyc
 data/*
+ExampleTeam
 
 gaussian_parameters_ghost_train1
 pickled_ghost_train1
