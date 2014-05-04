@@ -8,19 +8,9 @@ tags
 *.yaml
 *.csv
 *.pyc
-*.so
 __init__.py
-distanceCalculator.py
-game.py
-ghostAgents.py
-graphicsUtils.py
-keyboardAgents.py
-layout.py
-observedState.py
-pacman.py
-util.py
-util.pyc
 data/*
+ExampleTeam
 
 gaussian_parameters_ghost_train1
 pickled_ghost_train1
