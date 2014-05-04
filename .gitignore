@@ -10,6 +10,7 @@ tags
 *.pyc
 __init__.py
 data/*
+ExampleTeam
 
 gaussian_parameters_ghost_train1
 pickled_ghost_train1

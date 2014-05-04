@@ -174,14 +174,45 @@ class KDA9000Agent(BaseStudentAgent):
         # learned_params = cPickle.load("myparams.pkl")
         # learned_params = np.load("myparams.npy")    
         clfGhost = joblib.load('SVM_multi_linear_size_488162.pkl')
+        J = 10
+        prev_state = None
+        prev_action = None
+        thetas = np.random() # initialize random weights of length J
+
+        # array of feature functions 
+        one_funs = [lambda s,a: s.]
+        f1 = lambda s,a : s.getPacmanState().getPosition()[0]
+        f2 = lambda s,a : s.getPacmanState().getPosition()[1]
+
 
     def classifyGhost(self, clf, feat_v, quad):
         pass
 
     def classifyCapsule(self, clf, feat_v):
         pass
+
+    # returns numpy array of [f1(s,a), f2(s,a), ..., fj(s,a)]
+    def get_regression_feature(self, observedState, action):
+        pass
+    
+    # returns Q(state, action)
+    def Q_sa(self, state, action):
+        pass
+    
         
+    def target_sa(self, state, action):
+        pass
+
+
     def chooseAction(self, observedState):
+        print f1(observedState, prev_action)
+        return Direction.NORTH
+'''
+        feat_v = get_regression_feature(self.prev_state, self.prev_action)
+        target_sa = get_target(self.prev_state, self.prev_action)
+        for i in xrange(J):
+            thetas[j] = thetas[j] + alpha*(target_sa - Q_sa(self.prev_state, self.prev_action))*feat_fun[j](self.prev_state, self.prev_action)
+        
         """
         Here, choose pacman's next action based on the current state of the game.
         This is where all the action happens.
@@ -191,22 +222,4 @@ class KDA9000Agent(BaseStudentAgent):
         the ghosts and the capsules; it is just designed to give you an example.
         """
         pacmanPosition = observedState.getPacmanPosition()
-        ghost_states = observedState.getGhostStates() # states have getPosition() and getFeatures() methods
-        legalActs = [a for a in observedState.getLegalPacmanActions()]
-        ghost_dists = np.array([self.distancer.getDistance(pacmanPosition,gs.getPosition()) 
-                              for gs in ghost_states])
-        # find the closest ghost by sorting the distances
-        closest_idx = sorted(zip(range(len(ghost_states)),ghost_dists), key=lambda t: t[1])[0][0]
-        # take the action that minimizes distance to the current closest ghost
-        best_action = Directions.STOP
-        best_dist = -np.inf
-        for la in legalActs:
-            if la == Directions.STOP:
-                continue
-            successor_pos = Actions.getSuccessor(pacmanPosition,la)
-            new_dist = self.distancer.getDistance(successor_pos,ghost_states[closest_idx].getPosition())
-            if new_dist > best_dist:
-                best_action = la
-                best_dist = new_dist
-        return best_action
-                
+        ghost_states = ob
