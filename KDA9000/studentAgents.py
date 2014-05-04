@@ -187,6 +187,11 @@ class KDA9000Agent(BaseStudentAgent):
         prev_action = None
         thetas = np.random() # initialize random weights of length J
 
+        # array of feature functions 
+        one_funs = [lambda s,a: s.]
+        f1 = lambda s,a : s.getPacmanState().getPosition()[0]
+        f2 = lambda s,a : s.getPacmanState().getPosition()[1]
+
     def classifyGhost(self, clf, feat_v, quad):
         pass
 
