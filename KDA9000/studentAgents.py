@@ -203,7 +203,9 @@ class KDA9000Agent(BaseStudentAgent):
         curDistancesG = [manhattanDistance(pacpos,ghostPosition) for ghostPosition in ghostsPositions]
         distanceGhosts = [manhattanDistance(newPosition,ghostPosition) for ghostPosition in ghostsPositions]
 
-        capsulesPositions = [cap[0] for cap in self.capsules]
+
+        # feature vectors for capsules
+        capsulesPositions = [cap[0] for cap in self.all_capsules]
         curDistancesC = [manhattanDistance(pacpos,capsulePosition) for capsulePosition in capsulesPositions]
         distanceCapsules = [manhattanDistance(newPosition,capsulePosition) for capsulePosition in capsulesPositions]
 
@@ -251,6 +253,8 @@ class KDA9000Agent(BaseStudentAgent):
         clf_v = np.insert(feat_v,0,quad)
         return int(self.clfGhost.predict(clf_v)[0])
 
+    # returns bool whether it's likely to be a good capsule or not
+    # considered good capsule if it's in the same cluster as the example capsules
     def classifyCapsule(self, feat_v):
         # only get correct class once
         if self.correct_class == None:
@@ -342,7 +346,19 @@ class KDA9000Agent(BaseStudentAgent):
         # relpos = [(cap[0][0]-pacPos[0],cap[0][1]-pacPos[1]) for cap in caps]
         # newcaps = [(caps[i][0],caps[i][1],relpos[i]) for i in range(len(caps))]
         # self.capsules = sorted(newcaps,key=lambda x:manhattanDistance(x[2],(0,0)))
-        self.capsules = sorted(observedState.getCapsuleData(),key=lambda x:x[1][1])
+
+        # sort the capsules first by potentially good capsules followed by bad 
+        # capsules, and within good/bad capsules, sort by closest distance
+        # to PacMan's current position first
+        caps_and_class = [(cap, self.classifyCapsule(cap[1])) for cap in observedState.getCapsuleData()]
+        good_caps = [cap_class[0] for cap_class in capsules_and_class if cap_class[1]]
+        bad_caps = [cap_class[0] for cap_class in capsules_and_class if not cap_class[1]]
+        sorted_good_caps = sorted(good_caps, key = lambda x: manhattanDistance(x[0], observedState.getPacManPosition()))
+        sorted_bad_caps = sorted(bad_caps, key = lambda x: manhattanDistance(x[0], observedState.getPacManPosition()))
+        sorted_all_caps = sorted_good_caps + sorted_bad_caps
+        self.capsules = sorted_all_caps
+        
+        #self.capsules = sorted(observedState.getCapsuleData(),key=lambda x:x[1][1])
 
         # return immediately if in None case (beginning of game)
         if self.prev_state == None or self.prev_action == None:
