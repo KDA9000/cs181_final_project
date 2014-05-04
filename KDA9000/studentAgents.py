@@ -180,7 +180,7 @@ class KDA9000Agent(BaseStudentAgent):
     alpha = 0.05
     gamma = 1-pow(10,-10)
     dirs = [Directions.NORTH,Directions.EAST,Directions.SOUTH,Directions.WEST,Directions.STOP]
-    t = 10000
+    t = 10
     dt = 0.01
     trapped_dir = None
 
@@ -205,7 +205,7 @@ class KDA9000Agent(BaseStudentAgent):
 
 
         # feature vectors for capsules
-        capsulesPositions = [cap[0] for cap in self.all_capsules]
+        capsulesPositions = [cap[0] for cap in self.capsules]
         curDistancesC = [manhattanDistance(pacpos,capsulePosition) for capsulePosition in capsulesPositions]
         distanceCapsules = [manhattanDistance(newPosition,capsulePosition) for capsulePosition in capsulesPositions]
 
@@ -258,14 +258,18 @@ class KDA9000Agent(BaseStudentAgent):
     def classifyCapsule(self, feat_v):
         # only get correct class once
         if self.correct_class == None:
-            real_caps = np.array(observedState.getGoodCapsuleExamples())
+            real_caps = np.array([[0.57992318,1.32338916,0.94076627],
+                [-1.14773678,-4.82263876,1.21043419],
+                [-0.04505671,-1.27733715,-0.11816285],
+                [-2.43469675,-1.13362012,1.39733327],
+                [-0.45958987,-1.02964365,0.63902567]])
             real_caps = self.norm.transform(real_caps)
             res = self.km.predict(real_caps)
             print("predicted classes for good capsule examples:")
             print(res)
             self.correct_class = int(np.mean(res) + 0.5)
 
-        normed_feats = self.norm(feat_v)
+        normed_feats = self.norm.transform(feat_v)
         prediction = int(self.km.predict(normed_feats))
         return (prediction == self.correct_class)
 
@@ -351,10 +355,10 @@ class KDA9000Agent(BaseStudentAgent):
         # capsules, and within good/bad capsules, sort by closest distance
         # to PacMan's current position first
         caps_and_class = [(cap, self.classifyCapsule(cap[1])) for cap in observedState.getCapsuleData()]
-        good_caps = [cap_class[0] for cap_class in capsules_and_class if cap_class[1]]
-        bad_caps = [cap_class[0] for cap_class in capsules_and_class if not cap_class[1]]
-        sorted_good_caps = sorted(good_caps, key = lambda x: manhattanDistance(x[0], observedState.getPacManPosition()))
-        sorted_bad_caps = sorted(bad_caps, key = lambda x: manhattanDistance(x[0], observedState.getPacManPosition()))
+        good_caps = [cap_class[0] for cap_class in caps_and_class if cap_class[1]]
+        bad_caps = [cap_class[0] for cap_class in caps_and_class if not cap_class[1]]
+        sorted_good_caps = sorted(good_caps, key = lambda x: manhattanDistance(x[0], observedState.getPacmanPosition()))
+        sorted_bad_caps = sorted(bad_caps, key = lambda x: manhattanDistance(x[0], observedState.getPacmanPosition()))
         sorted_all_caps = sorted_good_caps + sorted_bad_caps
         self.capsules = sorted_all_caps
         
