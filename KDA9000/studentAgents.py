@@ -165,7 +165,7 @@ class KDA9000Agent(BaseStudentAgent):
     Our actual agent
     '''
     ghostsdict = None
-    clastovalue = [29.9735,49.3226,]
+    class_to_value = [29.9735,49.3226,150.649,19.9242]
     f1 = lambda self,s : s.getPacmanState().getPosition()[0]
     f2 = lambda self,s : s.getPacmanState().getPosition()[1]
 
@@ -225,24 +225,31 @@ class KDA9000Agent(BaseStudentAgent):
                 if clas == 5:
                     self.ghostsdict['bad'] = (gs, observedState.getGhostQuadrant(gs),-1000)
                 else:
+                    self.ghostsdict['good'].append((gs, observedState.getGhostQuadrant(gs), class_to_value[clas])) 
 
-                self.ghosts.append((gs, observedState.getGhostQuadrant(gs)))
         # check at every step whether ghosts have changed by checking feature vectors
         else:
             new_ghost_states = observedState.getGhostStates()
-            new_ghosts = []
-
+            new_good_ghosts = []
+            
             for new_gs in new_ghost_states:
-                is_new = True
-                for gs_quad in self.ghosts:
-                    if (new_gs.getFeatures() == gs_quad[0].getFeatures()).all():
-                        new_ghosts.append(gs_quad)
-                        is_new = False
-                        break
-                if is_new:
-                    new_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs)))
-                    print "NEW GHOST!!!"
-            self.ghosts = new_ghosts
+                clas = self.classifyGhost(gs.getFeatures(), observedState.getGhostQuadrant(gs))
+                if clas == 5:
+                    if not (new_gs.getFeatures() == ghostsdict['bad'][0].getFeatures()).all():
+                        ghostsdict['bad'] = (new_gs, observedState.getGhostQuadrant(new_gs), -1000)
+                else:
+                    is_new = True
+                    for gs_quad in self.ghostsdict['good']:
+                        if (new_gs.getFeatures() == gs_quad[0].getFeatures()).all():
+                            new_good_ghosts.append(gs_quad)
+                            is_new = False
+                            break
+                    if is_new:
+                        new_good_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs), class_to_value[clas]))
+                        print "NEW GHOST!!!"
+
+            # sort good ghosts in decreasing order
+            self.ghostsdict['good'] = sorted(new_good_ghosts,key=lambda x:-x[2])
         
         # print self.ghosts
         print self.classifyGhost(self.clfGhost,self.ghosts[0][0].getFeatures(),self.ghosts[0][1])
