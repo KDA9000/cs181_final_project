@@ -291,7 +291,7 @@ class KDA9000Agent(BaseStudentAgent):
             for new_gs in new_ghost_states:
                 #clas = self.classifyGhost(new_gs.getFeatures(), observedState.getGhostQuadrant(new_gs))
                 if (new_gs.getFeatures() == self.ghostsdict['bad'][0].getFeatures()).all():
-                    continue
+                    self.ghostsdict['bad'] = (new_gs,self.ghostsdict['bad'][1],self.ghostsdict['bad'][2])
                 else:
                     is_new = True
                     for gs_quad in self.ghostsdict['good']:
