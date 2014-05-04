@@ -166,25 +166,46 @@ class KDA9000Agent(BaseStudentAgent):
     '''
     ghostsdict = None
     class_to_value = [29.9735,49.3226,150.649,19.9242]
-    f1 = lambda self,s : s.getPacmanState().getPosition()[0]
-    f2 = lambda self,s : s.getPacmanState().getPosition()[1]
 
-    J = 10
+    f = [lambda self,s : 0 for i in range(24)]
+    f[0] = lambda self,s : s.getPacmanState().getPosition()[0]
+    f[1] = lambda self,s : s.getPacmanState().getPosition()[1]
+    f[2] = lambda self,s : self.ghostsdict['bad'][0].getPosition()[0] - s.getPacmanState().getPosition()[0]
+    f[3] = lambda self,s : self.ghostsdict['bad'][0].getPosition()[1] - s.getPacmanState().getPosition()[1]
+    f[4] = lambda self,s : self.ghostsdict['good'][0][0].getPosition()[0] - s.getPacmanState().getPosition()[0]
+    f[5] = lambda self,s : self.ghostsdict['good'][0][0].getPosition()[1] - s.getPacmanState().getPosition()[1]
+    f[6] = lambda self,s : self.ghostsdict['good'][1][0].getPosition()[0] - s.getPacmanState().getPosition()[0]
+    f[7] = lambda self,s : self.ghostsdict['good'][1][0].getPosition()[1] - s.getPacmanState().getPosition()[1]
+    f[8] = lambda self,s : self.ghostsdict['good'][2][0].getPosition()[0] - s.getPacmanState().getPosition()[0]
+    f[9] = lambda self,s : self.ghostsdict['good'][2][0].getPosition()[1] - s.getPacmanState().getPosition()[1]
+    f[10] = lambda self,s : 0
+    f[11] = lambda self,s : 0
+    f[12] = lambda self,s : 0
+    f[13] = lambda self,s : 0
+    f[14] = lambda self,s : 0
+    f[15] = lambda self,s : 0
+    f[16] = lambda self,s : 0
+    f[17] = lambda self,s : 0
+    f[18] = lambda self,s : 0
+    f[19] = lambda self,s : 0
+    f[20] = lambda self,s : 0
+    f[21] = lambda self,s : 0
+    f[22] = lambda self,s : self.f[2](self,s) if s.scaredGhostPresent() else 0
+    f[23] = lambda self,s : self.f[3](self,s) if s.scaredGhostPresent() else 0
+
+    J = len(f)*5
+    thetas = np.ones(J)
     prev_state = None
     prev_action = None
-
-    ghost_class_expected_value = [] # array of expected value for each class 0,1,...,6
-    
-    ghosts = None
+    optimal_action = None
+    prev_score = 0
     clfGhost = None
-    '''
-        # returns list of f3, f4, .., f10
-        def f3tof10(s):
-            ghost_states = s.getGhostStates() # list of ghost states
-            for ghost in ghost_states:
-                latent_class = classifyGhost(clf, ghost.getFeatures(), __)
-                expected_value = ghost_class_expected_value[latent_class]
-    '''
+    alpha = 0.1
+    gamma = 1-pow(10,-10)
+    dirs = [Directions.NORTH,Directions.EAST,Directions.SOUTH,Directions.WEST,Directions.STOP]
+    t = 1
+    dt = 0.0001
+
     def __init__(self, *args, **kwargs):
         pass
 
@@ -193,27 +214,44 @@ class KDA9000Agent(BaseStudentAgent):
         # Here, you may do any necessary initialization, e.g., import some
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
-        # learned_params = np.load("myparams.npy")    
+        # learned_params = np.load("myparams.npy")
         with open('SVM_multi_linear_size_10000_011','rb') as fp:
             self.clfGhost = pickle.load(fp)
 
     def classifyGhost(self, feat_v, quad):
         clf_v = np.insert(feat_v,0,quad)
-        return int(clfGhost.predict(clf_v)[0])
+        return int(self.clfGhost.predict(clf_v)[0])
 
     def classifyCapsule(self, clf, feat_v):
         pass
 
     # returns numpy array of [f1(s,a), f2(s,a), ..., fj(s,a)]
     def get_regression_feature(self, observedState, action):
-        pass
-    
+        reg_features = np.zeros(self.J)
+        j = self.J/5
+        if action == Directions.NORTH:
+            reg_features[0:j] = map(lambda feat:feat(self,observedState),self.f)
+        elif action == Directions.EAST:
+            reg_features[j:2*j] = map(lambda feat:feat(self,observedState),self.f)
+        elif action == Directions.SOUTH:
+            reg_features[2*j:3*j] = map(lambda feat:feat(self,observedState),self.f)
+        elif action == Directions.WEST:
+            reg_features[3*j:4*j] = map(lambda feat:feat(self,observedState),self.f)
+        else:
+            assert(action == Directions.STOP)
+            reg_features[4*j:5*j] = map(lambda feat:feat(self,observedState),self.f)
+        return reg_features
+
     # returns Q(state, action)
     def Q_sa(self, state, action):
-        pass
-        
-    def target_sa(self, state, action):
-        pass
+        return np.dot(self.thetas,self.get_regression_feature(state,action))
+
+    def get_target(self, curr_state, prev_state, prev_action):
+        reward = curr_state.getScore() - prev_state.getScore()
+        Qsas = map(lambda a: self.Q_sa(curr_state, a), self.dirs)
+        maxQsa = max(Qsas)
+        self.optimal_action = self.dirs[Qsas.index(maxQsa)]
+        return reward + self.gamma*maxQsa
 
     def chooseAction(self, observedState):
         # if ghosts not initialized, initialize it to all ghosts currently on screen
@@ -225,7 +263,7 @@ class KDA9000Agent(BaseStudentAgent):
                 if clas == 5:
                     self.ghostsdict['bad'] = (gs, observedState.getGhostQuadrant(gs),-1000)
                 else:
-                    self.ghostsdict['good'].append((gs, observedState.getGhostQuadrant(gs), class_to_value[clas])) 
+                    self.ghostsdict['good'].append((gs, observedState.getGhostQuadrant(gs), self.class_to_value[clas])) 
 
         # check at every step whether ghosts have changed by checking feature vectors
         else:
@@ -233,10 +271,10 @@ class KDA9000Agent(BaseStudentAgent):
             new_good_ghosts = []
             
             for new_gs in new_ghost_states:
-                clas = self.classifyGhost(gs.getFeatures(), observedState.getGhostQuadrant(gs))
+                clas = self.classifyGhost(new_gs.getFeatures(), observedState.getGhostQuadrant(new_gs))
                 if clas == 5:
-                    if not (new_gs.getFeatures() == ghostsdict['bad'][0].getFeatures()).all():
-                        ghostsdict['bad'] = (new_gs, observedState.getGhostQuadrant(new_gs), -1000)
+                    if not (new_gs.getFeatures() == self.ghostsdict['bad'][0].getFeatures()).all():
+                        self.ghostsdict['bad'] = (new_gs, observedState.getGhostQuadrant(new_gs), -1000)
                 else:
                     is_new = True
                     for gs_quad in self.ghostsdict['good']:
@@ -245,32 +283,38 @@ class KDA9000Agent(BaseStudentAgent):
                             is_new = False
                             break
                     if is_new:
-                        new_good_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs), class_to_value[clas]))
+                        new_good_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs), self.class_to_value[clas]))
                         print "NEW GHOST!!!"
 
             # sort good ghosts in decreasing order
             self.ghostsdict['good'] = sorted(new_good_ghosts,key=lambda x:-x[2])
         
-        # print self.ghosts
-        print self.classifyGhost(self.clfGhost,self.ghosts[0][0].getFeatures(),self.ghosts[0][1])
+        # return immediately if in None case (beginning of game)
+        if self.prev_state == None or self.prev_action == None:
+            assert(self.prev_state == self.prev_action)
+            self.prev_state = observedState
+            self.prev_action = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
+            return self.prev_action
 
-        print self.f1(observedState)
-        print self.f2(observedState)
-        return observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
-'''
-        feat_v = get_regression_feature(self.prev_state, self.prev_action)
-        target_sa = get_target(self.prev_state, self.prev_action)
-        for i in xrange(J):
-            thetas[j] = thetas[j] + alpha*(target_sa - Q_sa(self.prev_state, self.prev_action))*feat_fun[j](self.prev_state, self.prev_action)
+        feat_v = self.get_regression_feature(self.prev_state, self.prev_action)
+        target_sa = self.get_target(observedState, self.prev_state, self.prev_action)
+
+        # index given by [north, east, south, west, stop]
+        index_factor = self.dirs.index(self.prev_action)
+        # update only the thetas that are nonzeroes determined by prev_action, and the indices are edetermined by
+        # index_factor
+        for j in xrange(index_factor*self.J/5,(index_factor+1)*self.J/5):
+            self.thetas[j] = self.thetas[j] + self.alpha*(target_sa - self.Q_sa(self.prev_state, self.prev_action)) \
+                *self.f[j % (self.J/5)](self,self.prev_state)
         
-        """
-        Here, choose pacman's next action based on the current state of the game.
-        This is where all the action happens.
-        
-        This silly pacman agent will move away from the ghost that it is closest
-        to. This is not a very good strategy, and completely ignores the features of
-        the ghosts and the capsules; it is just designed to give you an example.
-        """
-        pacmanPosition = observedState.getPacmanPosition()
-        ghost_states = ob
-'''
+        self.prev_state = observedState
+
+        epsilon = 1/self.t
+        if np.random.rand() < 1. - epsilon:
+            self.prev_action = self.optimal_action
+        else:
+            self.prev_action = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
+        self.prev_score = observedState.getScore()
+        self.t += self.dt
+        return self.prev_action
+
