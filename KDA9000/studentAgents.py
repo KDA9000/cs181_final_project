@@ -192,6 +192,7 @@ class KDA9000Agent(BaseStudentAgent):
         f1 = lambda s,a : s.getPacmanState().getPosition()[0]
         f2 = lambda s,a : s.getPacmanState().getPosition()[1]
 
+
     def classifyGhost(self, clf, feat_v, quad):
         pass
 
@@ -212,6 +213,9 @@ class KDA9000Agent(BaseStudentAgent):
 
 
     def chooseAction(self, observedState):
+        print f1(observedState, prev_action)
+        return Direction.NORTH
+'''
         feat_v = get_regression_feature(self.prev_state, self.prev_action)
         target_sa = get_target(self.prev_state, self.prev_action)
         for i in xrange(J):
@@ -244,4 +248,4 @@ class KDA9000Agent(BaseStudentAgent):
                 best_action = la
                 best_dist = new_dist
         return best_action
-                
+'''                
