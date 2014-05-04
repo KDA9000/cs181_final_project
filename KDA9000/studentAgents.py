@@ -3,7 +3,7 @@ from game import Actions
 from game import Directions
 from observedState import ObservedState
 import numpy as np
-import cPickle as pickle
+import pickle
 from sklearn.externals import joblib
 import sys
 
@@ -164,9 +164,7 @@ class KDA9000Agent(BaseStudentAgent):
     '''
     Our actual agent
     '''
-    f1 = lambda self,s,a : s.getPacmanState().getPosition()[0]
-    f2 = lambda self,s,a : s.getPacmanState().getPosition()[1]
-    f3 = lambda self,s,a : 
+
     J = 10
     prev_state = None
     prev_action = None
@@ -181,7 +179,7 @@ class KDA9000Agent(BaseStudentAgent):
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
         # learned_params = np.load("myparams.npy")    
-        # clfGhost = joblib.load('SVM_multi_linear_size_488162.pkl')
+        clfGhost = pickle.load('SVM_multi_linear_size_488162.pkl')
 
 
     def classifyGhost(self, clf, feat_v, quad):
