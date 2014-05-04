@@ -216,10 +216,6 @@ class KDA9000Agent(BaseStudentAgent):
         return candiAns
 
         # return np.concatenate((((distanceGhosts-curDistances)/np.square(curDistances.clip(1)),distanceGhosts)),axis=0)
-<<<<<<< HEAD
-=======
-
->>>>>>> 34392bf791b2972e49f80a3b5ccbb25b981993e6
     '''
     def mindist_ghost(self,state,action):
         pacState = state.getPacmanState()
