@@ -224,19 +224,4 @@ class KDA9000Agent(BaseStudentAgent):
         ghost_states = observedState.getGhostStates() # states have getPosition() and getFeatures() methods
         legalActs = [a for a in observedState.getLegalPacmanActions()]
         ghost_dists = np.array([self.distancer.getDistance(pacmanPosition,gs.getPosition()) 
-                              for gs in ghost_states])
-        # find the closest ghost by sorting the distances
-        closest_idx = sorted(zip(range(len(ghost_states)),ghost_dists), key=lambda t: t[1])[0][0]
-        # take the action that minimizes distance to the current closest ghost
-        best_action = Directions.STOP
-        best_dist = -np.inf
-        for la in legalActs:
-            if la == Directions.STOP:
-                continue
-            successor_pos = Actions.getSuccessor(pacmanPosition,la)
-            new_dist = self.distancer.getDistance(successor_pos,ghost_states[closest_idx].getPosition())
-            if new_dist > best_dist:
-                best_action = la
-                best_dist = new_dist
-        return best_action
-                
+                              for
