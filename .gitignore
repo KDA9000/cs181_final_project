@@ -14,3 +14,6 @@ ExampleTeam
 
 gaussian_parameters_ghost_train1
 pickled_ghost_train1
+ghost_sklearn_data
+ghost_sklearn_data_noquad_test
+ghost_sklearn_data_test

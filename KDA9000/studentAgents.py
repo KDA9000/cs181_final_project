@@ -3,7 +3,8 @@ from game import Actions
 from game import Directions
 from observedState import ObservedState
 import numpy as np
-import cPickle as pickle
+import pickle
+from sklearn.externals import joblib
 import sys
 
 class BaseStudentAgent(object):
@@ -108,7 +109,7 @@ class DataCollectorAgent(BaseStudentAgent):
         # Here, you may do any necessary initialization, e.g., import some
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
-        # learned_params = np.load("myparams.npy")        
+        # learned_params = np.load("myparams.npy")    
     
     def chooseAction(self, observedState):
         """
@@ -163,6 +164,25 @@ class KDA9000Agent(BaseStudentAgent):
     '''
     Our actual agent
     '''
+    f1 = lambda self,s : s.getPacmanState().getPosition()[0]
+    f2 = lambda self,s : s.getPacmanState().getPosition()[1]
+
+    J = 10
+    prev_state = None
+    prev_action = None
+
+    ghost_class_expected_value = [] # array of expected value for each class 0,1,...,6
+    
+    ghosts = None
+    clfGhost = None
+    '''
+        # returns list of f3, f4, .., f10
+        def f3tof10(s):
+            ghost_states = s.getGhostStates() # list of ghost states
+            for ghost in ghost_states:
+                latent_class = classifyGhost(clf, ghost.getFeatures(), __)
+                expected_value = ghost_class_expected_value[latent_class]
+    '''
     def __init__(self, *args, **kwargs):
         pass
 
@@ -185,10 +205,12 @@ class KDA9000Agent(BaseStudentAgent):
         f1 = lambda s,a : s.getPacmanState().getPosition()[0]
         f2 = lambda s,a : s.getPacmanState().getPosition()[1]
         '''
-
+        with open('SVM_multi_linear_size_10000_011','rb') as fp:
+            self.clfGhost = pickle.load(fp)
 
     def classifyGhost(self, clf, feat_v, quad):
-        pass
+        clf_v = np.insert(feat_v,0,quad)
+        return int(clf.predict(clf_v)[0])
 
     def classifyCapsule(self, clf, feat_v):
         pass
@@ -200,15 +222,40 @@ class KDA9000Agent(BaseStudentAgent):
     # returns Q(state, action)
     def Q_sa(self, state, action):
         pass
-    
         
     def target_sa(self, state, action):
         pass
 
-
     def chooseAction(self, observedState):
-        print f1(observedState, prev_action)
-        return Direction.NORTH
+        # if ghosts not initialized, initialize it to all ghosts currently on screen
+        if self.ghosts == None:
+            ghost_states = observedState.getGhostStates()
+            self.ghosts = []
+            for gs in ghost_states:
+                self.ghosts.append((gs, observedState.getGhostQuadrant(gs)))
+        # check at every step whether ghosts have changed by checking feature vectors
+        else:
+            new_ghost_states = observedState.getGhostStates()
+            new_ghosts = []
+
+            for new_gs in new_ghost_states:
+                is_new = True
+                for gs_quad in self.ghosts:
+                    if (new_gs.getFeatures() == gs_quad[0].getFeatures()).all():
+                        new_ghosts.append(gs_quad)
+                        is_new = False
+                        break
+                if is_new:
+                    new_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs)))
+                    print "NEW GHOST!!!"
+            self.ghosts = new_ghosts
+        
+        # print self.ghosts
+        print self.classifyGhost(self.clfGhost,self.ghosts[0][0].getFeatures(),self.ghosts[0][1])
+
+        print self.f1(observedState)
+        print self.f2(observedState)
+        return observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
 '''
         feat_v = get_regression_feature(self.prev_state, self.prev_action)
         target_sa = get_target(self.prev_state, self.prev_action)
@@ -223,4 +270,4 @@ class KDA9000Agent(BaseStudentAgent):
         the ghosts and the capsules; it is just designed to give you an example.
         pacmanPosition = observedState.getPacmanPosition()
         ghost_states = ob
-        '''
+'''

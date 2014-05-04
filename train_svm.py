@@ -1,11 +1,10 @@
-import cPickle as pickle
+import pickle
 import numpy as np
 import os
 from sklearn import svm
 from sklearn import cross_validation
-from sklearn.externals import joblib
 
-suffix = "11"
+suffix = "011"
 multi = True
 c = 0
 ker = 'linear'
@@ -46,5 +45,6 @@ for i in [0,1,2,3,5]:
     print "the score for class "+str(i)+" is "+str(100*clf.score(X_test[indices],y_test[indices]))+"%"
 
 print "saving..."
-joblib.dump(clf, 'SVM_'+mul_name+'_'+ker+'_size_'+str(N)+"_"+suffix+'.pkl', compress=9)
+with open('SVM_'+mul_name+'_'+ker+'_size_'+str(N)+"_"+suffix,"wb") as fp:
+    pickle.dump(clf,fp)
 print "done!"
