@@ -185,6 +185,11 @@ class KDA9000Agent(BaseStudentAgent):
     dt = 0.01
     trapped_dir = None
 
+    # stuff for doing k-means on capsules
+    norm = None
+    km = None
+    correct_class = None
+
     def ddist_ghost(self,state,action):
         pacState = state.getPacmanState()
         legalActions = state.getLegalPacmanActions()
@@ -238,13 +243,30 @@ class KDA9000Agent(BaseStudentAgent):
         # learned_params = np.load("myparams.npy")
         with open('SVM_multi_linear_size_10000_011','rb') as fp:
             self.clfGhost = pickle.load(fp)
+        with open('normalization_params', 'rb') as fp2:
+            self.norm = pickle.load(fp2)
+        with open('kmeans_params', 'rb') as fp3:
+            self.km = pickle.load(fp3)
+
 
     def classifyGhost(self, feat_v, quad):
         clf_v = np.insert(feat_v,0,quad)
         return int(self.clfGhost.predict(clf_v)[0])
 
-    def classifyCapsule(self, clf, feat_v):
-        pass
+    def classifyCapsule(self, feat_v):
+        # only get correct class once
+        if self.correct_class == None:
+            real_caps = np.array(observedState.getGoodCapsuleExamples())
+            real_caps = self.norm.transform(real_caps)
+            res = self.km.predict(real_caps)
+            print("predicted classes for good capsule examples:")
+            print(res)
+            self.correct_class = int(np.mean(res) + 0.5)
+
+        normed_feats = self.norm(feat_v)
+        prediction = int(self.km.predict(normed_feats))
+        return (prediction == self.correct_class)
+
 
     # returns numpy array of [f1(s,a), f2(s,a), ..., fj(s,a)]
     def get_regression_feature(self, observedState, action):

@@ -1,14 +1,10 @@
 import cPickle as pickle
 import numpy as np
-import sklearn.cross_validation
-from sklearn import svm
-from sklearn.linear_model import LogisticRegression
-from sklearn import tree
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 import matplotlib.cm
 from mpl_toolkits.mplot3d import Axes3D
-from sklearn.preprocessing import StandardScaler
+from sklearn import preprocessing
 
 data_pickle = "capsule_data_labeled.npy"
 with open(data_pickle, "rb") as fp:
@@ -46,16 +42,24 @@ print("testing...")
 score = clf.score(X_test, t_test)
 print(score)
 '''
-num_to_plot = 10000
-#X = X[0:num_to_plot]
+'''
+Not compatible with scikit-learn v0.10 :(
 s = StandardScaler(copy=False)
+'''
+# For scikit-learn v0.10
+s = preprocessing.Scaler(copy=False)
+
+
 X = s.fit_transform(X)
 real = s.transform(real)
 real2 = s.transform(real2)
 real3 = s.transform(real3)
 
-
+'''
+Not compatible with scikit-learn v0.10
 km = KMeans(n_clusters=3)
+'''
+km = KMeans(k=3)
 km.fit(X)
 centers = km.cluster_centers_
 labels = km.labels_
