@@ -171,7 +171,7 @@ class KDA9000Agent(BaseStudentAgent):
 
     J = 4
     # thetas = np.zeros(J)
-    thetas = [10,-1,-1,-1]#,1,-100,-100,-100]
+    thetas = [10]+[-1]*3 + [-1]*6 #,1,-100,-100,-100]
     prev_state = None
     prev_action = None
     optimal_action = None
@@ -194,10 +194,19 @@ class KDA9000Agent(BaseStudentAgent):
         for i in range(3):
             ghostsPositions.append(self.ghostsdict['good'][i][0].getPosition())
         newPosition = (pacpos[0]+actionVector[0], pacpos[1]+actionVector[1])
-        curDistances = np.array([manhattanDistance(pacpos,ghostPosition) for ghostPosition in ghostsPositions])
-        distanceGhosts = np.array([manhattanDistance(newPosition,ghostPosition) for ghostPosition in ghostsPositions])
-        
-        return (distanceGhosts-curDistances)/np.square(curDistances.clip(1))
+        curDistancesG = [manhattanDistance(pacpos,ghostPosition) for ghostPosition in ghostsPositions]
+        distanceGhosts = [manhattanDistance(newPosition,ghostPosition) for ghostPosition in ghostsPositions]
+
+        capsulesPositions = [pos[0] for cap in self.capsules]
+        curDistancesC = [manhattanDistance(pacpos,capsulePosition) for capsulePosition in capsulesPositions]
+        distanceCapsules = [manhattanDistance(newPosition,capsulePosition) for capsulePosition in capsulesPositions]
+
+        distances = np.array(distanceGhosts+distanceCapsules)
+        curDistances = np.array(curDistancesG+curDistancesC)
+
+        candiAns = (distances-curDistances)/np.square(curDistances.clip(1))
+        candiAns[0] = candiAns[0]*float(state.scaredGhostPresent())*-1
+        return candiAns
 
         # return np.concatenate((((distanceGhosts-curDistances)/np.square(curDistances.clip(1)),distanceGhosts)),axis=0)
 
@@ -299,7 +308,7 @@ class KDA9000Agent(BaseStudentAgent):
                 for new_gs in new_ghost_states:
                     print new_gs
                 sys.exit()
-            self.ghostsdict['good'] = sorted(new_good_ghosts,key=lambda x:-x[2]+(x[1]+x[0].getFeatures())[1]/100)
+            self.ghostsdict['good'] = sorted(new_good_ghosts,key=lambda x:-x[2]+(x[1]+x[0].getFeatures())[1]/1000.)
         
         if self.capsules == None:
             self.capsules = observedState.getCapsuleData()
