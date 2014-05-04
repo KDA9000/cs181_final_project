@@ -179,7 +179,7 @@ class KDA9000Agent(BaseStudentAgent):
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
         # learned_params = np.load("myparams.npy")    
-        clfGhost = pickle.load('SVM_multi_linear_size_488162.pkl')
+        clfGhost = pickle.load('SVM_multi_linear_size_10000_011')
 
 
     def classifyGhost(self, clf, feat_v, quad):
