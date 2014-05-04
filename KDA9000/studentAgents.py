@@ -182,6 +182,10 @@ class KDA9000Agent(BaseStudentAgent):
         # learned_params = cPickle.load("myparams.pkl")
         # learned_params = np.load("myparams.npy")    
         clfGhost = joblib.load('SVM_multi_linear_size_488162.pkl')
+        J = 10
+        prev_state = None
+        prev_action = None
+        thetas = np.random() # initialize random weights of length J
 
     def classifyGhost(self, clf, feat_v, quad):
         pass
@@ -192,9 +196,21 @@ class KDA9000Agent(BaseStudentAgent):
     # returns numpy array of [f1(s,a), f2(s,a), ..., fj(s,a)]
     def get_regression_feature(self, observedState, action):
         pass
+    
+    # returns Q(state, action)
+    def Q_sa(self, state, action):
+        pass
+    
+        
+    def target_sa(self, state, action):
+        pass
+
 
     def chooseAction(self, observedState):
-        feat_v = get_regression_feature(observedState, action)
+        feat_v = get_regression_feature(self.prev_state, self.prev_action)
+        target_sa = get_target(self.prev_state, self.prev_action)
+        for i in xrange(J):
+            thetas[j] = thetas[j] + alpha*(target_sa - Q_sa(self.prev_state, self.prev_action))*feat_fun[j](self.prev_state, self.prev_action)
         
         """
         Here, choose pacman's next action based on the current state of the game.
