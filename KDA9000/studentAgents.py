@@ -29,8 +29,7 @@ class BaseStudentAgent(object):
     def chooseAction(self, observedState):
         "By default, a BustersAgent just stops.  This should be overridden."
         return Directions.STOP
-
-
+        
 ## Below is the class students need to rename and modify
 
 class ExampleTeamAgent(BaseStudentAgent):
@@ -70,7 +69,7 @@ class ExampleTeamAgent(BaseStudentAgent):
         pacmanPosition = observedState.getPacmanPosition()
         ghost_states = observedState.getGhostStates() # states have getPosition() and getFeatures() methods
         legalActs = [a for a in observedState.getLegalPacmanActions()]
-        ghost_dists = np.array([self.distancer.getDistance(pacmanPosition,gs.getPosition()) 
+        ghost_dists = np.array([self.distancer.getDistance(pacmanPosition,gs.getPosition())
                               for gs in ghost_states])
         # find the closest ghost by sorting the distances
         closest_idx = sorted(zip(range(len(ghost_states)),ghost_dists), key=lambda t: t[1])[0][0]
@@ -211,7 +210,7 @@ class KDA9000Agent(BaseStudentAgent):
         return candiAns
 
         # return np.concatenate((((distanceGhosts-curDistances)/np.square(curDistances.clip(1)),distanceGhosts)),axis=0)
-
+    '''
     def mindist_ghost(self,state,action):
         pacState = state.getPacmanState()
         legalActions = state.getLegalPacmanActions()
@@ -224,7 +223,7 @@ class KDA9000Agent(BaseStudentAgent):
             ghostsPositions.append(self.ghostsdict['good'][i][0].getPosition())
         newPosition = (pacpos[0]+actionVector[0], pacpos[1]+actionVector[1])
         return manhattanDistance(newPosition,ghostPosition)
-
+    '''
     def __init__(self, *args, **kwargs):
         pass
 
@@ -303,12 +302,14 @@ class KDA9000Agent(BaseStudentAgent):
                             self.ghostsdict['bad'] = (new_gs, observedState.getGhostQuadrant(new_gs), -1000.)
                         else:
                             new_good_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs), self.class_to_value[clas]))
-                        print "NEW GHOST!!!"
+
 
             # sort good ghosts in decreasing order
             if (len(new_good_ghosts) < 3):
+                print "problem"
                 for new_gs in new_ghost_states:
                     print new_gs
+                print "end problem"
                 sys.exit()
             self.ghostsdict['good'] = sorted(new_good_ghosts,key=lambda x:-x[2]+(x[1]+x[0].getFeatures())[1]/1000.)
         
@@ -325,26 +326,34 @@ class KDA9000Agent(BaseStudentAgent):
             assert(self.prev_state == self.prev_action)
             self.prev_state = observedState
             self.prev_action = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
+            assert(self.prev_action in observedState.getLegalPacmanActions())
             return self.prev_action
 
         trapped = self.trapped_dir
         if trapped != None:
             self.trapped_dir = None
-            return trapped
+            
+            #assert(trapped in observedState.getLegalPacmanActions())
+            #return trapped
+            return observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
 
         pacPos = observedState.getPacmanState().getPosition()
         wall = lambda x,y:observedState.hasWall(x,y)
         if wall(pacPos[0]+1,pacPos[1]) and wall(pacPos[0]-1,pacPos[1]) and wall(pacPos[0],pacPos[1]-1):
-            self.trapped_dir = Directions.NORTH
+            self.trapped_dir = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
+            assert(self.trapped_dir in observedState.getLegalPacmanActions())
             return self.trapped_dir
         elif wall(pacPos[0]+1,pacPos[1]) and wall(pacPos[0]-1,pacPos[1]) and wall(pacPos[0],pacPos[1]+1):
-            self.trapped_dir = Directions.SOUTH
+            self.trapped_dir = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
+            assert(self.trapped_dir in observedState.getLegalPacmanActions())
             return self.trapped_dir
         elif wall(pacPos[0],pacPos[1]+1) and wall(pacPos[0],pacPos[1]-1) and wall(pacPos[0]+1,pacPos[1]):
-            self.trapped_dir = Directions.WEST
+            self.trapped_dir = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
+            assert(self.trapped_dir in observedState.getLegalPacmanActions())
             return self.trapped_dir
         elif wall(pacPos[0],pacPos[1]+1) and wall(pacPos[0],pacPos[1]-1) and wall(pacPos[0]-1,pacPos[1]):
-            self.trapped_dir = Directions.EAST
+            self.trapped_dir = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
+            assert(self.trapped_dir in observedState.getLegalPacmanActions())
             return self.trapped_dir     
 
 
@@ -370,13 +379,16 @@ class KDA9000Agent(BaseStudentAgent):
         epsilon = 1/self.t
         if np.random.rand() < 1. - epsilon:
             self.prev_action = self.optimal_action
+            assert(self.prev_action in observedState.getLegalPacmanActions() or self.prev_action == None)
         else:
             self.prev_action = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
+            assert(self.prev_action in observedState.getLegalPacmanActions())
         self.prev_score = observedState.getScore()
         self.t += self.dt
         print self.thetas
         print 1. - epsilon
         #print observedState.getPacmanPosition()
         # print self.ghostsdict
+
         return self.prev_action
 
