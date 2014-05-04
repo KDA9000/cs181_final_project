@@ -167,17 +167,18 @@ class KDA9000Agent(BaseStudentAgent):
     ghostsdict = None
     class_to_value = [29.9735,49.3226,150.649,19.9242]
 
+    g = lambda self,x,y: np.sign(x)/pow((pow(x,2)+pow(y,2)+1.),0.5)#/(np.absolute(x)+1.)
     f = [lambda self,s : 0 for i in range(24)]
-    f[0] = lambda self,s : s.getPacmanState().getPosition()[0]
-    f[1] = lambda self,s : s.getPacmanState().getPosition()[1]
-    f[2] = lambda self,s : self.ghostsdict['bad'][0].getPosition()[0] - s.getPacmanState().getPosition()[0]
-    f[3] = lambda self,s : self.ghostsdict['bad'][0].getPosition()[1] - s.getPacmanState().getPosition()[1]
-    f[4] = lambda self,s : self.ghostsdict['good'][0][0].getPosition()[0] - s.getPacmanState().getPosition()[0]
-    f[5] = lambda self,s : self.ghostsdict['good'][0][0].getPosition()[1] - s.getPacmanState().getPosition()[1]
-    f[6] = lambda self,s : self.ghostsdict['good'][1][0].getPosition()[0] - s.getPacmanState().getPosition()[0]
-    f[7] = lambda self,s : self.ghostsdict['good'][1][0].getPosition()[1] - s.getPacmanState().getPosition()[1]
-    f[8] = lambda self,s : self.ghostsdict['good'][2][0].getPosition()[0] - s.getPacmanState().getPosition()[0]
-    f[9] = lambda self,s : self.ghostsdict['good'][2][0].getPosition()[1] - s.getPacmanState().getPosition()[1]
+    f[0] = lambda self,s : 0 #s.getPacmanState().getPosition()[0]
+    f[1] = lambda self,s : 0 #s.getPacmanState().getPosition()[1]
+    f[2] = lambda self,s : self.g((self.ghostsdict['bad'][0].getPosition()[0] - s.getPacmanState().getPosition()[0]), (self.ghostsdict['bad'][0].getPosition()[1] - s.getPacmanState().getPosition()[1]))
+    f[3] = lambda self,s : self.g((self.ghostsdict['bad'][0].getPosition()[1] - s.getPacmanState().getPosition()[1]), (self.ghostsdict['bad'][0].getPosition()[0] - s.getPacmanState().getPosition()[0]))
+    f[4] = lambda self,s : self.g((self.ghostsdict['good'][0][0].getPosition()[0] - s.getPacmanState().getPosition()[0]), (self.ghostsdict['good'][0][0].getPosition()[1] - s.getPacmanState().getPosition()[1]))
+    f[5] = lambda self,s : self.g((self.ghostsdict['good'][0][0].getPosition()[1] - s.getPacmanState().getPosition()[1]), (self.ghostsdict['good'][0][0].getPosition()[0] - s.getPacmanState().getPosition()[0]))
+    f[6] = lambda self,s : self.g((self.ghostsdict['good'][1][0].getPosition()[0] - s.getPacmanState().getPosition()[0]), (self.ghostsdict['good'][1][0].getPosition()[1] - s.getPacmanState().getPosition()[1]))
+    f[7] = lambda self,s : self.g((self.ghostsdict['good'][1][0].getPosition()[1] - s.getPacmanState().getPosition()[1]), (self.ghostsdict['good'][1][0].getPosition()[0] - s.getPacmanState().getPosition()[0]))
+    f[8] = lambda self,s : self.g((self.ghostsdict['good'][2][0].getPosition()[0] - s.getPacmanState().getPosition()[0]), (self.ghostsdict['good'][2][0].getPosition()[1] - s.getPacmanState().getPosition()[1]))
+    f[9] = lambda self,s : self.g((self.ghostsdict['good'][2][0].getPosition()[1] - s.getPacmanState().getPosition()[1]), (self.ghostsdict['good'][2][0].getPosition()[0] - s.getPacmanState().getPosition()[0]))
     f[10] = lambda self,s : 0
     f[11] = lambda self,s : 0
     f[12] = lambda self,s : 0
@@ -194,17 +195,23 @@ class KDA9000Agent(BaseStudentAgent):
     f[23] = lambda self,s : self.f[3](self,s) if s.scaredGhostPresent() else 0
 
     J = len(f)*5
-    thetas = np.ones(J)
+    # thetas = np.zeros(J)
+    fN_init = [0,0]+[0,-1,0,1,0,1,0,1]+([0]*12)+[0,1]
+    fE_init = [0,0]+[-1,0,1,0,1,0,1,0]+([0]*12)+[1,0]
+    fS_init = [0,0]+[0,1,0,-1,0,-1,0,-1]+([0]*12)+[0,-1]
+    fW_init = [0,0]+[1,0,-1,0,-1,0,-1,0]+([0]*12)+[-1,0]
+    fSt_init = [0]*24
+    thetas = np.array(fN_init+fE_init+fS_init+fW_init+fSt_init,dtype=np.float_)
     prev_state = None
     prev_action = None
     optimal_action = None
     prev_score = 0
     clfGhost = None
-    alpha = 0.1
+    alpha = 0.001
     gamma = 1-pow(10,-10)
     dirs = [Directions.NORTH,Directions.EAST,Directions.SOUTH,Directions.WEST,Directions.STOP]
     t = 1
-    dt = 0.0001
+    dt = 0.1
 
     def __init__(self, *args, **kwargs):
         pass
@@ -249,8 +256,19 @@ class KDA9000Agent(BaseStudentAgent):
     def get_target(self, curr_state, prev_state, prev_action):
         reward = curr_state.getScore() - prev_state.getScore()
         Qsas = map(lambda a: self.Q_sa(curr_state, a), self.dirs)
-        maxQsa = max(Qsas)
-        self.optimal_action = self.dirs[Qsas.index(maxQsa)]
+        print Qsas
+        tuples = zip(self.dirs,Qsas)
+        tuples = sorted(tuples,key=lambda t:-t[1])
+        valid_dirs = curr_state.getLegalPacmanActions()
+        found_optimal = False
+        maxQsa = None
+        for tu in tuples:
+            if tu[0] in valid_dirs:
+                self.optimal_action = tu[0]
+                found_optimal = True
+                maxQsa = tu[1]
+                break
+        assert(found_optimal and maxQsa != None)
         return reward + self.gamma*maxQsa
 
     def chooseAction(self, observedState):
@@ -271,10 +289,9 @@ class KDA9000Agent(BaseStudentAgent):
             new_good_ghosts = []
             
             for new_gs in new_ghost_states:
-                clas = self.classifyGhost(new_gs.getFeatures(), observedState.getGhostQuadrant(new_gs))
-                if clas == 5:
-                    if not (new_gs.getFeatures() == self.ghostsdict['bad'][0].getFeatures()).all():
-                        self.ghostsdict['bad'] = (new_gs, observedState.getGhostQuadrant(new_gs), -1000)
+                #clas = self.classifyGhost(new_gs.getFeatures(), observedState.getGhostQuadrant(new_gs))
+                if (new_gs.getFeatures() == self.ghostsdict['bad'][0].getFeatures()).all():
+                    continue
                 else:
                     is_new = True
                     for gs_quad in self.ghostsdict['good']:
@@ -283,10 +300,18 @@ class KDA9000Agent(BaseStudentAgent):
                             is_new = False
                             break
                     if is_new:
-                        new_good_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs), self.class_to_value[clas]))
+                        clas = self.classifyGhost(new_gs.getFeatures(), observedState.getGhostQuadrant(new_gs))
+                        if clas == 5:
+                            self.ghostsdict['bad'] = (new_gs, observedState.getGhostQuadrant(new_gs), -1000.)
+                        else:
+                            new_good_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs), self.class_to_value[clas]))
                         print "NEW GHOST!!!"
 
             # sort good ghosts in decreasing order
+            if (len(new_good_ghosts) < 3):
+                for new_gs in new_ghost_states:
+                    print new_gs
+                sys.exit()
             self.ghostsdict['good'] = sorted(new_good_ghosts,key=lambda x:-x[2])
         
         # return immediately if in None case (beginning of game)
@@ -316,5 +341,8 @@ class KDA9000Agent(BaseStudentAgent):
             self.prev_action = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
         self.prev_score = observedState.getScore()
         self.t += self.dt
+        print self.thetas
+        print 1. - epsilon
+        #print observedState.getPacmanPosition()
         return self.prev_action
 
