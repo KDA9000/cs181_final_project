@@ -180,9 +180,11 @@ class KDA9000Agent(BaseStudentAgent):
         thetas = np.random() # initialize random weights of length J
 
         # array of feature functions 
+        '''
         one_funs = [lambda s,a: s.]
         f1 = lambda s,a : s.getPacmanState().getPosition()[0]
         f2 = lambda s,a : s.getPacmanState().getPosition()[1]
+        '''
 
 
     def classifyGhost(self, clf, feat_v, quad):
@@ -213,13 +215,12 @@ class KDA9000Agent(BaseStudentAgent):
         for i in xrange(J):
             thetas[j] = thetas[j] + alpha*(target_sa - Q_sa(self.prev_state, self.prev_action))*feat_fun[j](self.prev_state, self.prev_action)
         
-        """
         Here, choose pacman's next action based on the current state of the game.
         This is where all the action happens.
         
         This silly pacman agent will move away from the ghost that it is closest
         to. This is not a very good strategy, and completely ignores the features of
         the ghosts and the capsules; it is just designed to give you an example.
-        """
         pacmanPosition = observedState.getPacmanPosition()
         ghost_states = ob
+        '''
