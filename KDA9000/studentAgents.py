@@ -109,8 +109,8 @@ class DataCollectorAgent(BaseStudentAgent):
         # Here, you may do any necessary initialization, e.g., import some
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
-        # learned_params = np.load("myparams.npy")    
-    
+        # learned_params = np.load("myparams.npy")
+
     def chooseAction(self, observedState):
         """
         Here, choose pacman's next action based on the current state of the game.
@@ -164,6 +164,8 @@ class KDA9000Agent(BaseStudentAgent):
     '''
     Our actual agent
     '''
+    ghostsdict = None
+    clastovalue = [29.9735,49.3226,]
     f1 = lambda self,s : s.getPacmanState().getPosition()[0]
     f2 = lambda self,s : s.getPacmanState().getPosition()[1]
 
@@ -188,29 +190,16 @@ class KDA9000Agent(BaseStudentAgent):
 
     def registerInitialState(self, gameState):
         super(KDA9000Agent, self).registerInitialState(gameState)
-
         # Here, you may do any necessary initialization, e.g., import some
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
         # learned_params = np.load("myparams.npy")    
-        clfGhost = joblib.load('SVM_multi_linear_size_488162.pkl')
-        J = 10
-        prev_state = None
-        prev_action = None
-        thetas = np.random() # initialize random weights of length J
-
-        # array of feature functions 
-        '''
-        one_funs = [lambda s,a: s.]
-        f1 = lambda s,a : s.getPacmanState().getPosition()[0]
-        f2 = lambda s,a : s.getPacmanState().getPosition()[1]
-        '''
         with open('SVM_multi_linear_size_10000_011','rb') as fp:
             self.clfGhost = pickle.load(fp)
 
-    def classifyGhost(self, clf, feat_v, quad):
+    def classifyGhost(self, feat_v, quad):
         clf_v = np.insert(feat_v,0,quad)
-        return int(clf.predict(clf_v)[0])
+        return int(clfGhost.predict(clf_v)[0])
 
     def classifyCapsule(self, clf, feat_v):
         pass
@@ -228,10 +217,15 @@ class KDA9000Agent(BaseStudentAgent):
 
     def chooseAction(self, observedState):
         # if ghosts not initialized, initialize it to all ghosts currently on screen
-        if self.ghosts == None:
+        if self.ghostsdict == None:
             ghost_states = observedState.getGhostStates()
-            self.ghosts = []
+            self.ghostsdict = {'bad':None,'good':[]}
             for gs in ghost_states:
+                clas = self.classifyGhost(gs.getFeatures(),observedState.getGhostQuadrant(gs))
+                if clas == 5:
+                    self.ghostsdict['bad'] = (gs, observedState.getGhostQuadrant(gs),-1000)
+                else:
+
                 self.ghosts.append((gs, observedState.getGhostQuadrant(gs)))
         # check at every step whether ghosts have changed by checking feature vectors
         else:
@@ -262,12 +256,14 @@ class KDA9000Agent(BaseStudentAgent):
         for i in xrange(J):
             thetas[j] = thetas[j] + alpha*(target_sa - Q_sa(self.prev_state, self.prev_action))*feat_fun[j](self.prev_state, self.prev_action)
         
+        """
         Here, choose pacman's next action based on the current state of the game.
         This is where all the action happens.
         
         This silly pacman agent will move away from the ghost that it is closest
         to. This is not a very good strategy, and completely ignores the features of
         the ghosts and the capsules; it is just designed to give you an example.
+        """
         pacmanPosition = observedState.getPacmanPosition()
         ghost_states = ob
 '''
