@@ -97,13 +97,17 @@ class ObservedState(object):
             the x,y position of pacman after making the sequence of moves
             in the actions variable from the current state.
 
-        if actions is empty, None is returned.
+        if actions is empty or consists only of illegal actions, None is returned.
         """
         next_pos = None
+        curr_conf = self.pacman_state.configuration
         for action in actions:
             vector = Actions.directionToVector( action, 1)
-            new_conf = self.pacman_state.configuration.generateSuccessor(vector)
-            next_pos = new_conf.getPosition()
+            new_conf = curr_conf.generateSuccessor(vector)
+            temp_pos = new_conf.getPosition()
+            if not self.layout.walls[temp_pos[0]][temp_pos[1]]:
+                next_pos = temp_pos
+                curr_conf = new_conf
         return next_pos
 
     def ghostFuturePosition(self, ghost_idx, actions):
@@ -115,13 +119,17 @@ class ObservedState(object):
             the x,y position of the ghost indexed by ghost_idx after making the sequence
             of moves in the actions variable from the current state.
 
-        if actions is empty, None is returned
+        if actions is empty or consists only of illegal actions, None is returned
         """
         next_pos = None
+        curr_conf = self.ghost_states[ghost_idx].configuration
         for action in actions:
             vector = Actions.directionToVector( action, 1 )
-            new_conf = self.ghost_states[ghost_idx].configuration.generateSuccessor(vector)
-            next_pos = new_conf.getPosition()
+            new_conf = curr_conf.generateSuccessor(vector)
+            temp_pos = new_conf.getPosition()
+            if not self.layout.walls[temp_pos[0]][temp_pos[1]]:
+                next_pos = temp_pos
+                curr_conf = new_conf
         return next_pos
 
     def capsuleEdible(self, pacmanPos, capsulePos):

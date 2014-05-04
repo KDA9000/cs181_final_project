@@ -175,29 +175,42 @@ class KDA9000Agent(BaseStudentAgent):
     
     ghosts = None
     clfGhost = None
-'''
-    # returns list of f3, f4, .., f10
-    def f3tof10(s):
-        ghost_states = s.getGhostStates() # list of ghost states
-        for ghost in ghost_states:
-            latent_class = classifyGhost(clf, ghost.getFeatures(), __)
-            expected_value = ghost_class_expected_value[latent_class]
-'''
+    '''
+        # returns list of f3, f4, .., f10
+        def f3tof10(s):
+            ghost_states = s.getGhostStates() # list of ghost states
+            for ghost in ghost_states:
+                latent_class = classifyGhost(clf, ghost.getFeatures(), __)
+                expected_value = ghost_class_expected_value[latent_class]
+    '''
     def __init__(self, *args, **kwargs):
         pass
 
     def registerInitialState(self, gameState):
         super(KDA9000Agent, self).registerInitialState(gameState)
-        
+
         # Here, you may do any necessary initialization, e.g., import some
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
         # learned_params = np.load("myparams.npy")    
+        clfGhost = joblib.load('SVM_multi_linear_size_488162.pkl')
+        J = 10
+        prev_state = None
+        prev_action = None
+        thetas = np.random() # initialize random weights of length J
+
+        # array of feature functions 
+        '''
+        one_funs = [lambda s,a: s.]
+        f1 = lambda s,a : s.getPacmanState().getPosition()[0]
+        f2 = lambda s,a : s.getPacmanState().getPosition()[1]
+        '''
         with open('SVM_multi_linear_size_10000_011','rb') as fp:
-            clfGhost = pickle.load(fp)
+            self.clfGhost = pickle.load(fp)
 
     def classifyGhost(self, clf, feat_v, quad):
-        pass
+        clf_v = np.insert(feat_v,0,quad)
+        return int(clf.predict(clf_v)[0])
 
     def classifyCapsule(self, clf, feat_v):
         pass
@@ -209,45 +222,52 @@ class KDA9000Agent(BaseStudentAgent):
     # returns Q(state, action)
     def Q_sa(self, state, action):
         pass
-    
         
     def target_sa(self, state, action):
         pass
 
-
     def chooseAction(self, observedState):
         # if ghosts not initialized, initialize it to all ghosts currently on screen
-        if ghosts == None:
+        if self.ghosts == None:
             ghost_states = observedState.getGhostStates()
-            ghosts = []
+            self.ghosts = []
             for gs in ghost_states:
-                ghosts.append((gs, observdState.getGhostQuadrant(gs)))
+                self.ghosts.append((gs, observedState.getGhostQuadrant(gs)))
         # check at every step whether ghosts have changed by checking feature vectors
         else:
             new_ghost_states = observedState.getGhostStates()
-            for new_gs in new_ghost_states:
-                bool is_new = False
-            
-        print ghost_states
-        
+            new_ghosts = []
 
-        print self.f1(observedState,self.prev_action)
-        print self.f2(observedState,self.prev_action)
-        return Directions.NORTH
+            for new_gs in new_ghost_states:
+                is_new = True
+                for gs_quad in self.ghosts:
+                    if (new_gs.getFeatures() == gs_quad[0].getFeatures()).all():
+                        new_ghosts.append(gs_quad)
+                        is_new = False
+                        break
+                if is_new:
+                    new_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs)))
+                    print "NEW GHOST!!!"
+            self.ghosts = new_ghosts
+        
+        # print self.ghosts
+        print self.classifyGhost(self.clfGhost,self.ghosts[0][0].getFeatures(),self.ghosts[0][1])
+
+        print self.f1(observedState)
+        print self.f2(observedState)
+        return observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
 '''
         feat_v = get_regression_feature(self.prev_state, self.prev_action)
         target_sa = get_target(self.prev_state, self.prev_action)
         for i in xrange(J):
             thetas[j] = thetas[j] + alpha*(target_sa - Q_sa(self.prev_state, self.prev_action))*feat_fun[j](self.prev_state, self.prev_action)
         
-        """
         Here, choose pacman's next action based on the current state of the game.
         This is where all the action happens.
         
         This silly pacman agent will move away from the ghost that it is closest
         to. This is not a very good strategy, and completely ignores the features of
         the ghosts and the capsules; it is just designed to give you an example.
-        """
         pacmanPosition = observedState.getPacmanPosition()
         ghost_states = ob
 '''
