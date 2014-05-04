@@ -178,8 +178,9 @@ class KDA9000Agent(BaseStudentAgent):
         # Here, you may do any necessary initialization, e.g., import some
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
-        # learned_params = np.load("myparams.npy")    
-        clfGhost = pickle.load('SVM_multi_linear_size_10000_011')
+        # learned_params = np.load("myparams.npy")
+        with open('SVM_multi_linear_size_10000_011','rb') as fp:
+            clfGhost = pickle.load(fp)
 
 
     def classifyGhost(self, clf, feat_v, quad):
