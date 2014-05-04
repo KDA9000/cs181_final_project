@@ -169,19 +169,20 @@ class KDA9000Agent(BaseStudentAgent):
     capsules = None
     class_to_value = [29.9735,49.3226,150.649,19.9242]
 
-    J = 4
+    J = 10
     # thetas = np.zeros(J)
-    thetas = [10]+[-1]*3 + [-1]*6 #,1,-100,-100,-100]
+    thetas = [12.072337981216242, -0.48824095638567144, -0.12732825706817857, -14.119137086538544] + [-5]*6
     prev_state = None
     prev_action = None
     optimal_action = None
     prev_score = 0
     clfGhost = None
-    alpha = 0.001
+    alpha = 0.05
     gamma = 1-pow(10,-10)
     dirs = [Directions.NORTH,Directions.EAST,Directions.SOUTH,Directions.WEST,Directions.STOP]
-    t = 1
-    dt = 0.1
+    t = 10000
+    dt = 0.01
+    trapped_dir = None
 
     def ddist_ghost(self,state,action):
         pacState = state.getPacmanState()
@@ -197,15 +198,16 @@ class KDA9000Agent(BaseStudentAgent):
         curDistancesG = [manhattanDistance(pacpos,ghostPosition) for ghostPosition in ghostsPositions]
         distanceGhosts = [manhattanDistance(newPosition,ghostPosition) for ghostPosition in ghostsPositions]
 
-        capsulesPositions = [pos[0] for cap in self.capsules]
+        capsulesPositions = [cap[0] for cap in self.capsules]
         curDistancesC = [manhattanDistance(pacpos,capsulePosition) for capsulePosition in capsulesPositions]
         distanceCapsules = [manhattanDistance(newPosition,capsulePosition) for capsulePosition in capsulesPositions]
 
         distances = np.array(distanceGhosts+distanceCapsules)
         curDistances = np.array(curDistancesG+curDistancesC)
 
-        candiAns = (distances-curDistances)/np.square(curDistances.clip(1))
-        candiAns[0] = candiAns[0]*float(state.scaredGhostPresent())*-1
+        candiAns = (distances-curDistances)/np.absolute(curDistances.clip(1))
+        if state.scaredGhostPresent():
+            candiAns[0] = -candiAns[0]
         return candiAns
 
         # return np.concatenate((((distanceGhosts-curDistances)/np.square(curDistances.clip(1)),distanceGhosts)),axis=0)
@@ -251,7 +253,7 @@ class KDA9000Agent(BaseStudentAgent):
         return np.dot(self.thetas,self.get_regression_feature(state,action))
 
     def get_target(self, curr_state, prev_state, prev_action):
-        reward = curr_state.getScore() - prev_state.getScore()
+        reward = curr_state.getScore() - prev_state.getScore() +5
         Qsas = map(lambda a: self.Q_sa(curr_state, a), self.dirs)
         tuples = zip(self.dirs,Qsas)
         tuples = sorted(tuples,key=lambda t:-t[1])
@@ -310,8 +312,13 @@ class KDA9000Agent(BaseStudentAgent):
                 sys.exit()
             self.ghostsdict['good'] = sorted(new_good_ghosts,key=lambda x:-x[2]+(x[1]+x[0].getFeatures())[1]/1000.)
         
-        if self.capsules == None:
-            self.capsules = observedState.getCapsuleData()
+        #update capsule information
+        # caps = observedState.getCapsuleData()
+        # pacPos = observedState.getPacmanState().getPosition()
+        # relpos = [(cap[0][0]-pacPos[0],cap[0][1]-pacPos[1]) for cap in caps]
+        # newcaps = [(caps[i][0],caps[i][1],relpos[i]) for i in range(len(caps))]
+        # self.capsules = sorted(newcaps,key=lambda x:manhattanDistance(x[2],(0,0)))
+        self.capsules = sorted(observedState.getCapsuleData(),key=lambda x:x[1][1])
 
         # return immediately if in None case (beginning of game)
         if self.prev_state == None or self.prev_action == None:
@@ -319,6 +326,27 @@ class KDA9000Agent(BaseStudentAgent):
             self.prev_state = observedState
             self.prev_action = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
             return self.prev_action
+
+        trapped = self.trapped_dir
+        if trapped != None:
+            self.trapped_dir = None
+            return trapped
+
+        pacPos = observedState.getPacmanState().getPosition()
+        wall = lambda x,y:observedState.hasWall(x,y)
+        if wall(pacPos[0]+1,pacPos[1]) and wall(pacPos[0]-1,pacPos[1]) and wall(pacPos[0],pacPos[1]-1):
+            self.trapped_dir = Directions.NORTH
+            return self.trapped_dir
+        elif wall(pacPos[0]+1,pacPos[1]) and wall(pacPos[0]-1,pacPos[1]) and wall(pacPos[0],pacPos[1]+1):
+            self.trapped_dir = Directions.SOUTH
+            return self.trapped_dir
+        elif wall(pacPos[0],pacPos[1]+1) and wall(pacPos[0],pacPos[1]-1) and wall(pacPos[0]+1,pacPos[1]):
+            self.trapped_dir = Directions.WEST
+            return self.trapped_dir
+        elif wall(pacPos[0],pacPos[1]+1) and wall(pacPos[0],pacPos[1]-1) and wall(pacPos[0]-1,pacPos[1]):
+            self.trapped_dir = Directions.EAST
+            return self.trapped_dir     
+
 
         feat_v = self.get_regression_feature(self.prev_state, self.prev_action)
         target_sa = self.get_target(observedState, self.prev_state, self.prev_action)
@@ -328,8 +356,13 @@ class KDA9000Agent(BaseStudentAgent):
         # update only the thetas that are nonzeroes determined by prev_action, and the indices are edetermined by
         # index_factor
         prevQ = self.Q_sa(self.prev_state, self.prev_action)
-        for j in xrange(self.J):
-            self.thetas[j] = self.thetas[j] + self.alpha*(target_sa - prevQ)*feat_v[j]
+        for j in xrange(4):
+            candi = self.thetas[j] + self.alpha*(target_sa - prevQ)*feat_v[j]
+            if j==0 and candi >0:
+                self.thetas[j] = candi
+            elif candi <= 0:
+                self.thetas[j] = candi
+
         # self.thetas[0] = self.thetas[0] + self.alpha*(target_sa - prevQ)*feat_v[0]
         
         self.prev_state = observedState
