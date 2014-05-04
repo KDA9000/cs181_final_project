@@ -90,8 +90,6 @@ class DataCollectorAgent(BaseStudentAgent):
     """
     Collects data for the game
     """
-    ate_cap = False
-    reported = False
     data_points = 0
     max_points = 500000
     
@@ -121,9 +119,7 @@ class DataCollectorAgent(BaseStudentAgent):
         Move towards the closest capsule, ignore everything else
         """
         if observedState.scaredGhostPresent():
-            if not self.reported:
-                self.reported = True
-                sys.stderr.write("Real!\n")
+            sys.stderr.write("Real!\n")
             return Directions.STOP
 
         if self.data_points == self.max_points:
@@ -155,15 +151,11 @@ class DataCollectorAgent(BaseStudentAgent):
                 best_action = move
                 best_dist = new_dist
         if best_dist == 0:
-            self.ate_cap = True
-            self.reported = False
             self.data_points += 1
             capsule_feat = capsules[index][1]
             out = str(capsule_feat[0]) + "," + str(capsule_feat[1]) + "," + str(capsule_feat[2])
             sys.stderr.write(out)
             sys.stderr.write("\n")
-        else:
-            self.ate_cap = False
 
         return best_action
 
