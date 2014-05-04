@@ -4,6 +4,7 @@ from game import Directions
 from observedState import ObservedState
 import numpy as np
 import cPickle as pickle
+from sklearn.externals import joblib
 import sys
 
 class BaseStudentAgent(object):
@@ -171,6 +172,13 @@ class KDA9000Agent(BaseStudentAgent):
     '''
     Our actual agent
     '''
+    f1 = lambda self,s,a : s.getPacmanState().getPosition()[0]
+    f2 = lambda self,s,a : s.getPacmanState().getPosition()[1]
+    f3 = lambda self,s,a : 
+    J = 10
+    prev_state = None
+    prev_action = None
+
     def __init__(self, *args, **kwargs):
         pass
 
@@ -181,16 +189,7 @@ class KDA9000Agent(BaseStudentAgent):
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
         # learned_params = np.load("myparams.npy")    
-        clfGhost = joblib.load('SVM_multi_linear_size_488162.pkl')
-        J = 10
-        prev_state = None
-        prev_action = None
-        thetas = np.random() # initialize random weights of length J
-
-        # array of feature functions 
-        one_funs = [lambda s,a: s.]
-        f1 = lambda s,a : s.getPacmanState().getPosition()[0]
-        f2 = lambda s,a : s.getPacmanState().getPosition()[1]
+        # clfGhost = joblib.load('SVM_multi_linear_size_488162.pkl')
 
 
     def classifyGhost(self, clf, feat_v, quad):
@@ -213,8 +212,9 @@ class KDA9000Agent(BaseStudentAgent):
 
 
     def chooseAction(self, observedState):
-        print f1(observedState, prev_action)
-        return Direction.NORTH
+        print self.f1(observedState,self.prev_action)
+        print self.f2(observedState,self.prev_action)
+        return Directions.NORTH
 '''
         feat_v = get_regression_feature(self.prev_state, self.prev_action)
         target_sa = get_target(self.prev_state, self.prev_action)
@@ -231,3 +231,4 @@ class KDA9000Agent(BaseStudentAgent):
         """
         pacmanPosition = observedState.getPacmanPosition()
         ghost_states = ob
+'''
