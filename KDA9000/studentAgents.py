@@ -128,6 +128,7 @@ class DataCollectorAgent(BaseStudentAgent):
             sys.stderr.write("Maximum data points collected!\n")
             sys.exit(1)
 
+        print(observedState.getGoodCapsuleExamples())
         pacmanPosition = observedState.getPacmanPosition()
         capsules = observedState.getCapsuleData()
         legal_moves = observedState.getLegalPacmanActions()
@@ -212,6 +213,7 @@ class KDA9000Agent(BaseStudentAgent):
 
         # return np.concatenate((((distanceGhosts-curDistances)/np.square(curDistances.clip(1)),distanceGhosts)),axis=0)
 
+    '''
     def mindist_ghost(self,state,action):
         pacState = state.getPacmanState()
         legalActions = state.getLegalPacmanActions()
@@ -224,7 +226,7 @@ class KDA9000Agent(BaseStudentAgent):
             ghostsPositions.append(self.ghostsdict['good'][i][0].getPosition())
         newPosition = (pacpos[0]+actionVector[0], pacpos[1]+actionVector[1])
         return manhattanDistance(newPosition,ghostPosition)
-
+    '''
     def __init__(self, *args, **kwargs):
         pass
 
