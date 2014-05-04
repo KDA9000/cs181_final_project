@@ -45,6 +45,6 @@ for i in [0,1,2,3,5]:
     print "the score for class "+str(i)+" is "+str(100*clf.score(X_test[indices],y_test[indices]))+"%"
 
 print "saving..."
-with open('SVM_'+mul_name+'_'+ker+'_size_'+str(N)+"_"+suffix+'.pkl',"wb") as fp:
+with open('SVM_'+mul_name+'_'+ker+'_size_'+str(N)+"_"+suffix,"wb") as fp:
     pickle.dump(clf,fp)
 print "done!"
