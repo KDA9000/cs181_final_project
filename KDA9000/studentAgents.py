@@ -109,7 +109,7 @@ class DataCollectorAgent(BaseStudentAgent):
         # Here, you may do any necessary initialization, e.g., import some
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
-        # learned_params = np.load("myparams.npy")        
+        # learned_params = np.load("myparams.npy")    
     
     def chooseAction(self, observedState):
         """
@@ -164,24 +164,37 @@ class KDA9000Agent(BaseStudentAgent):
     '''
     Our actual agent
     '''
+    f1 = lambda self,s : s.getPacmanState().getPosition()[0]
+    f2 = lambda self,s : s.getPacmanState().getPosition()[1]
 
     J = 10
     prev_state = None
     prev_action = None
 
+    ghost_class_expected_value = [] # array of expected value for each class 0,1,...,6
+    
+    ghosts = None
+    clfGhost = None
+'''
+    # returns list of f3, f4, .., f10
+    def f3tof10(s):
+        ghost_states = s.getGhostStates() # list of ghost states
+        for ghost in ghost_states:
+            latent_class = classifyGhost(clf, ghost.getFeatures(), __)
+            expected_value = ghost_class_expected_value[latent_class]
+'''
     def __init__(self, *args, **kwargs):
         pass
 
     def registerInitialState(self, gameState):
         super(KDA9000Agent, self).registerInitialState(gameState)
-
+        
         # Here, you may do any necessary initialization, e.g., import some
         # parameters you've learned, as in the following commented out lines
         # learned_params = cPickle.load("myparams.pkl")
-        # learned_params = np.load("myparams.npy")
+        # learned_params = np.load("myparams.npy")    
         with open('SVM_multi_linear_size_10000_011','rb') as fp:
             clfGhost = pickle.load(fp)
-
 
     def classifyGhost(self, clf, feat_v, quad):
         pass
@@ -203,6 +216,21 @@ class KDA9000Agent(BaseStudentAgent):
 
 
     def chooseAction(self, observedState):
+        # if ghosts not initialized, initialize it to all ghosts currently on screen
+        if ghosts == None:
+            ghost_states = observedState.getGhostStates()
+            ghosts = []
+            for gs in ghost_states:
+                ghosts.append((gs, observdState.getGhostQuadrant(gs)))
+        # check at every step whether ghosts have changed by checking feature vectors
+        else:
+            new_ghost_states = observedState.getGhostStates()
+            for new_gs in new_ghost_states:
+                bool is_new = False
+            
+        print ghost_states
+        
+
         print self.f1(observedState,self.prev_action)
         print self.f2(observedState,self.prev_action)
         return Directions.NORTH
