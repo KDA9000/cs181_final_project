@@ -254,11 +254,11 @@ class heuristicsAgent(BaseStudentAgent):
         return sorted_good_caps
 
     def best_move(self, legal_moves, curr_pos, dest):
-        best_action = Direction.STOP
+        best_action = Directions.STOP
         best_dist = np.inf
         lst = []
         for move in legal_moves:
-            if move == Direcitions.STOP:
+            if move == Directions.STOP:
                 continue
             successor_pos = Actions.getSuccessor(curr_pos, move)
             distance = manhattanDistance(successor_pos, dest)
@@ -268,9 +268,9 @@ class heuristicsAgent(BaseStudentAgent):
             elif distance == best_dist:
                 lst.append(move)
         if lst == []:
-            return Distance.STOP
+            return Directions.STOP
         else:
-            lst[np.random.randint(len(lst))]
+            return lst[np.random.randint(len(lst))]
 
     def chooseAction(self, observedState):
         pacmanPosition = observedState.getPacmanPosition()
@@ -331,7 +331,7 @@ class heuristicsAgent(BaseStudentAgent):
                 else:
                     return self.best_move(legal_actions, pacmanPosition, dest)
 
-            best_action = best_move(legal_actions, pacmanPosition, dest)            
+            best_action = self.best_move(legal_actions, pacmanPosition, dest)            
             successor_pos = Actions.getSuccessor(pacmanPosition, best_action)
 
             if manhattanDistance(successor_pos, bad_ghost_pos) < 2:
