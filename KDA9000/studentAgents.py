@@ -166,14 +166,15 @@ class heuristicsAgent(BaseStudentAgent):
     '''
     ghostsdict = None
     capsules = None
-    prev_state = None
-    prev_action = None
-    optimal_action = None
     prev_score = 0
     clfGhost = None
     class_to_value = [29.9735,49.3226,150.649,19.9242]
     dirs = [Directions.NORTH,Directions.EAST,Directions.SOUTH,Directions.WEST,Directions.STOP]
     trapped_dir = None
+    
+    # number of times it has stayed still
+    num_stays = 0
+    
 
     # stuff for doing k-means on capsules
     norm = None
@@ -327,7 +328,14 @@ class heuristicsAgent(BaseStudentAgent):
             # Stop if next to good capsule
             if manhattanDistance(pacmanPosition, dest) == 1:
                 if manhattanDistance(pacmanPosition, bad_ghost_pos) > 1:
-                    return Directions.STOP
+                    if self.num_stays > 20:
+                        next_action = legal_actions[np.rand.randint(len(next_action))]
+                        if next_action != Directions.STOP:                        
+                            self.num_stays = 0
+                        return next_action
+                    else:
+                        self.num_stays += 1
+                        return Directions.STOP
                 else:
                     return self.best_move(legal_actions, pacmanPosition, dest)
 
