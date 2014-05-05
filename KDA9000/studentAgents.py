@@ -171,14 +171,14 @@ class KDA9000Agent(BaseStudentAgent):
 
     J = 10
     # thetas = np.zeros(J)
-    thetas = [12.072337981216242, -0.48824095638567144, -0.12732825706817857, -14.119137086538544] + [-5]*6
+    thetas = [120.072337981216242, -0.48824095638567144, -0.12732825706817857, -14.119137086538544] + [-4]*6
     prev_state = None
     prev_action = None
     optimal_action = None
     prev_score = 0
     clfGhost = None
-    alpha = 0.05
-    gamma = 1-pow(10,-10)
+    alpha = 0.001
+    gamma = 1-pow(10,-3)
     dirs = [Directions.NORTH,Directions.EAST,Directions.SOUTH,Directions.WEST,Directions.STOP]
     t = 10000
     dt = 0.01
@@ -207,7 +207,7 @@ class KDA9000Agent(BaseStudentAgent):
 
         candiAns = (distances-curDistances)/np.absolute(curDistances.clip(1))
         if state.scaredGhostPresent():
-            candiAns[0] = -candiAns[0]
+            candiAns[0] = -10*candiAns[0]
         return candiAns
 
         # return np.concatenate((((distanceGhosts-curDistances)/np.square(curDistances.clip(1)),distanceGhosts)),axis=0)
@@ -253,7 +253,7 @@ class KDA9000Agent(BaseStudentAgent):
         return np.dot(self.thetas,self.get_regression_feature(state,action))
 
     def get_target(self, curr_state, prev_state, prev_action):
-        reward = curr_state.getScore() - prev_state.getScore() +5
+        reward = curr_state.getScore() - prev_state.getScore() +5 + (curr_state.scaredGhostPresent())*100
         Qsas = map(lambda a: self.Q_sa(curr_state, a), self.dirs)
         tuples = zip(self.dirs,Qsas)
         tuples = sorted(tuples,key=lambda t:-t[1])
@@ -303,7 +303,7 @@ class KDA9000Agent(BaseStudentAgent):
                             self.ghostsdict['bad'] = (new_gs, observedState.getGhostQuadrant(new_gs), -1000.)
                         else:
                             new_good_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs), self.class_to_value[clas]))
-                        print "NEW GHOST!!!"
+                        # print "NEW GHOST!!!"
 
             # sort good ghosts in decreasing order
             if (len(new_good_ghosts) < 3):
@@ -356,7 +356,7 @@ class KDA9000Agent(BaseStudentAgent):
         # update only the thetas that are nonzeroes determined by prev_action, and the indices are edetermined by
         # index_factor
         prevQ = self.Q_sa(self.prev_state, self.prev_action)
-        for j in xrange(4):
+        for j in xrange(self.J):
             candi = self.thetas[j] + self.alpha*(target_sa - prevQ)*feat_v[j]
             if j==0 and candi >0:
                 self.thetas[j] = candi
@@ -374,8 +374,8 @@ class KDA9000Agent(BaseStudentAgent):
             self.prev_action = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
         self.prev_score = observedState.getScore()
         self.t += self.dt
-        print self.thetas
-        print 1. - epsilon
+        # print self.thetas
+        # print 1. - epsilon
         #print observedState.getPacmanPosition()
         # print self.ghostsdict
         return self.prev_action
