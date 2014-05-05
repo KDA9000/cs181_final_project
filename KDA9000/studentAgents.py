@@ -329,7 +329,7 @@ class heuristicsAgent(BaseStudentAgent):
             if manhattanDistance(pacmanPosition, dest) == 1:
                 if manhattanDistance(pacmanPosition, bad_ghost_pos) > 1:
                     if self.num_stays > 20:
-                        next_action = legal_actions[np.rand.randint(len(next_action))]
+                        next_action = legal_actions[np.random.randint(len(legal_actions))]
                         if next_action != Directions.STOP:                        
                             self.num_stays = 0
                         return next_action
