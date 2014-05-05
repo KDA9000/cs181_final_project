@@ -253,7 +253,24 @@ class heuristicsAgent(BaseStudentAgent):
         sorted_good_caps = sorted(good_caps, key = lambda x: manhattanDistance(x[0], observedState.getPacmanPosition()))
         return sorted_good_caps
 
-        
+    def best_move(self, legal_moves, curr_pos, dest):
+        best_action = Direction.STOP
+        best_dist = np.inf
+        lst = []
+        for move in legal_moves:
+            if move == Direcitions.STOP:
+                continue
+            successor_pos = Actions.getSuccessor(curr_pos, move)
+            distance = manhattanDistance(successor_pos, dest)
+            if distance < best_dist:
+                lst = [move]
+                best_dist = distance
+            elif distance == best_dist:
+                lst.append(move)
+        if lst == []:
+            return Distance.STOP
+        else:
+            lst[np.random.randint(len(lst))]
 
     def chooseAction(self, observedState):
         pacmanPosition = observedState.getPacmanPosition()
@@ -301,45 +318,34 @@ class heuristicsAgent(BaseStudentAgent):
             legal_actions = observedState.getLegalPacmanActions()
             best_action = Directions.STOP
             best_dist = np.inf
-            for move in legal_actions:
-                if move == Directions.STOP:
-                    continue
-                successor_pos = Actions.getSuccessor(pacmanPosition, move)
-                dist = manhattanDistance(successor_pos, bad_ghost_pos)
-                if dist < best_dist:
-                    best_action = move
-                    best_dist = dist
-            assert(best_action != Directions.STOP)
-            self.prev_action = best_action
-            return best_action
+            return self.best_move(legal_actions, pacmanPosition, bad_ghost_pos)
         # go towards good capsule unless move will immediately endanger ghost
         else:
             legal_actions = observedState.getLegalPacmanActions()
             good_caps = self.get_good_caps(observedState)
             dest = good_caps[0][0]
-            best_action = Directions.STOP
-            best_dist_to_cap = manhattanDistance(pacmanPosition, dest)
-            for move in legal_actions:
-                if move == Directions.STOP:
-                    continue
-                successor_pos = Actions.getSuccessor(pacmanPosition, move)
-                print(pacmanPosition, successor_pos, move)
-                dist_to_cap = manhattanDistance(successor_pos, dest)
-                dist_to_bad_ghost = manhattanDistance(successor_pos, bad_ghost_pos)
-                if dist_to_cap < best_dist_to_cap and dist_to_bad_ghost > 0:
-                    best_action = move
-                    best_dist_to_cap = dist_to_cap
-                self.prev_action = best_action
-            if best_action == None:
+            # Stop if next to good capsule
+            if manhattanDistance(pacmanPosition, dest) == 1:
+                if manhattanDistance(pacmanPosition, bad_ghost_pos) > 1:
+                    return Directions.STOP
+                else:
+                    return self.best_move(legal_actions, pacmanPosition, dest)
+
+            best_action = best_move(legal_actions, pacmanPosition, dest)            
+            successor_pos = Actions.getSuccessor(pacmanPosition, best_action)
+
+            if manhattanDistance(successor_pos, bad_ghost_pos) < 2:
                 possible_actions = []
                 for move in legal_actions:
                     if move == Directions.STOP:
                         continue
                     successor_pos = Actions.getSuccessor(pacmanPosition, move)
-                    if manhattanDistance(successor_pos, bad_ghost_pos) > 0:
+                    if manhattanDistance(successor_pos, bad_ghost_pos) > 1:
                         possible_actions.append(move)
-                return possible_actions[np.random.randint(len(possible_actions))]
-            return best_action
+                lst_len = len(possible_actions)
+                if lst_len > 0:
+                    best_action = possible_actions[np.random.randint(lst_len)]
+        return best_action
                     
 
                 
