@@ -318,18 +318,19 @@ class heuristicsAgent(BaseStudentAgent):
             good_caps = self.get_good_caps(observedState)
             dest = good_caps[0][0]
             best_action = Directions.STOP
-            best_dist_to_cap = np.inf
+            best_dist_to_cap = manhattanDistance(pacmanPosition, dest)
             for move in legal_actions:
                 if move == Directions.STOP:
                     continue
                 successor_pos = Actions.getSuccessor(pacmanPosition, move)
+                print(pacmanPosition, successor_pos, move)
                 dist_to_cap = manhattanDistance(successor_pos, dest)
                 dist_to_bad_ghost = manhattanDistance(successor_pos, bad_ghost_pos)
                 if dist_to_cap < best_dist_to_cap and dist_to_bad_ghost > 0:
                     best_action = move
                     best_dist_to_cap = dist_to_cap
                 self.prev_action = best_action
-                return best_action
+            return best_action
                     
                 
             
