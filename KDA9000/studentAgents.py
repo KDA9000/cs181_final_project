@@ -374,8 +374,7 @@ class KDA9000Agent(BaseStudentAgent):
     clfGhost = None
     alpha = 1
     gamma = 1-pow(10,-5)
-    dirs =
-[Directions.NORTH,Directions.EAST,Directions.SOUTH,Directions.WEST,Directions.STOP]
+    dirs = [Directions.NORTH,Directions.EAST,Directions.SOUTH,Directions.WEST,Directions.STOP]
     t = 10000
     dt = 0.01
     trapped_dir = None
@@ -396,16 +395,12 @@ class KDA9000Agent(BaseStudentAgent):
         for i in range(3):
             ghostsPositions.append(self.ghostsdict['good'][i][0].getPosition())
         newPosition = (pacpos[0]+actionVector[0], pacpos[1]+actionVector[1])
-        curDistancesG = [manhattanDistance(pacpos,ghostPosition) for
-ghostPosition in ghostsPositions]
-        distanceGhosts = [manhattanDistance(newPosition,ghostPosition) for
-ghostPosition in ghostsPositions]
+        curDistancesG = [manhattanDistance(pacpos,ghostPosition) for ghostPosition in ghostsPositions]
+        distanceGhosts = [manhattanDistance(newPosition,ghostPosition) for ghostPosition in ghostsPositions]
 
         capsulesPositions = [cap[0] for cap in self.capsules]
-        curDistancesC = [manhattanDistance(pacpos,capsulePosition) for
-capsulePosition in capsulesPositions]
-        distanceCapsules = [manhattanDistance(newPosition,capsulePosition) for
-capsulePosition in capsulesPositions]
+        curDistancesC = [manhattanDistance(pacpos,capsulePosition) for capsulePosition in capsulesPositions]
+        distanceCapsules = [manhattanDistance(newPosition,capsulePosition) for capsulePosition in capsulesPositions]
 
         distances = np.array(distanceGhosts+distanceCapsules)
         curDistances = np.array(curDistancesG+curDistancesC)
@@ -481,51 +476,39 @@ capsulePosition in capsulesPositions]
         return reward + self.gamma*maxQsa
 
     def chooseAction(self, observedState):
-        # if ghosts not initialized, initialize it to all ghosts currently on
-        # screen
+        # if ghosts not initialized, initialize it to all ghosts currently on screen
         if self.ghostsdict == None:
             ghost_states = observedState.getGhostStates()
             self.ghostsdict = {'bad':None,'good':[]}
             for gs in ghost_states:
-                clas =
-self.classifyGhost(gs.getFeatures(),observedState.getGhostQuadrant(gs))
+                clas = self.classifyGhost(gs.getFeatures(),observedState.getGhostQuadrant(gs))
                 if clas == 5:
-                    self.ghostsdict['bad'] = (gs,
-observedState.getGhostQuadrant(gs),-1000)
+                    self.ghostsdict['bad'] = (gs, observedState.getGhostQuadrant(gs),-1000)
                 else:
-                    self.ghostsdict['good'].append((gs,
-observedState.getGhostQuadrant(gs), self.class_to_value[clas]))
+                    self.ghostsdict['good'].append((gs, observedState.getGhostQuadrant(gs), self.class_to_value[clas])) 
 
-        # check at every step whether ghosts have changed by checking feature
-        # vectors
+        # check at every step whether ghosts have changed by checking feature vectors
         else:
             new_ghost_states = observedState.getGhostStates()
             new_good_ghosts = []
-
+            
             for new_gs in new_ghost_states:
-                #clas = self.classifyGhost(new_gs.getFeatures(),
-observedState.getGhostQuadrant(new_gs))
-                if (new_gs.getFeatures() ==
-self.ghostsdict['bad'][0].getFeatures()).all():
-                    self.ghostsdict['bad'] =
-(new_gs,self.ghostsdict['bad'][1],self.ghostsdict['bad'][2])
+                #clas = self.classifyGhost(new_gs.getFeatures(), observedState.getGhostQuadrant(new_gs))
+                if (new_gs.getFeatures() == self.ghostsdict['bad'][0].getFeatures()).all():
+                    self.ghostsdict['bad'] = (new_gs,self.ghostsdict['bad'][1],self.ghostsdict['bad'][2])
                 else:
                     is_new = True
                     for gs_quad in self.ghostsdict['good']:
-                        if (new_gs.getFeatures() ==
-gs_quad[0].getFeatures()).all():
+                        if (new_gs.getFeatures() == gs_quad[0].getFeatures()).all():
                             new_good_ghosts.append((new_gs,gs_quad[1],gs_quad[2]))
                             is_new = False
                             break
                     if is_new:
-                        clas = self.classifyGhost(new_gs.getFeatures(),
-observedState.getGhostQuadrant(new_gs))
+                        clas = self.classifyGhost(new_gs.getFeatures(), observedState.getGhostQuadrant(new_gs))
                         if clas == 5:
-                            self.ghostsdict['bad'] = (new_gs,
-observedState.getGhostQuadrant(new_gs), -1000.)
+                            self.ghostsdict['bad'] = (new_gs, observedState.getGhostQuadrant(new_gs), -1000.)
                         else:
-                            new_good_ghosts.append((new_gs,
-observedState.getGhostQuadrant(new_gs), self.class_to_value[clas]))
+                            new_good_ghosts.append((new_gs, observedState.getGhostQuadrant(new_gs), self.class_to_value[clas]))
                         # print "NEW GHOST!!!"
 
             # sort good ghosts in decreasing order
@@ -533,22 +516,18 @@ observedState.getGhostQuadrant(new_gs), self.class_to_value[clas]))
                 for new_gs in new_ghost_states:
                     print new_gs
                 sys.exit()
-            self.ghostsdict['good'] = sorted(new_good_ghosts,key=lambda
-x:-x[2]+(x[1]+x[0].getFeatures())[1]/1000.)
-
+            self.ghostsdict['good'] = sorted(new_good_ghosts,key=lambda x:-x[2]+(x[1]+x[0].getFeatures())[1]/1000.)
+        
         # update capsule information
-        caps_and_class = [(cap, self.classifyCapsule(cap[1])) for cap in
-observedState.getCapsuleData()]
-        good_caps = [cap_class[0] for cap_class in caps_and_class if
-cap_class[1]]
+        caps_and_class = [(cap, self.classifyCapsule(cap[1])) for cap in observedState.getCapsuleData()]
+        good_caps = [cap_class[0] for cap_class in caps_and_class if cap_class[1]]
         self.capsules = sorted(good_caps, key = lambda x: x[1][1])
 
         # return immediately if in None case (beginning of game)
         if self.prev_state == None or self.prev_action == None:
             assert(self.prev_state == self.prev_action)
             self.prev_state = observedState
-            self.prev_action =
-observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
+            self.prev_action = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
             return self.prev_action
 
         # if coming out of a trap, move randomly
@@ -562,35 +541,30 @@ observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLeg
         # if trapped, get out
         pacPos = observedState.getPacmanState().getPosition()
         wall = lambda x,y:observedState.hasWall(x,y)
-        if wall(pacPos[0]+1,pacPos[1]) and wall(pacPos[0]-1,pacPos[1]) and
-wall(pacPos[0],pacPos[1]-1):
+        if wall(pacPos[0]+1,pacPos[1]) and wall(pacPos[0]-1,pacPos[1]) and wall(pacPos[0],pacPos[1]-1):
             trapped_lst = observedState.getLegalPacmanActions()
             trapped_lst.remove(Directions.STOP)
             self.trapped_dir = trapped_lst[np.random.randint(len(trapped_lst))]
             return self.trapped_dir
-        elif wall(pacPos[0]+1,pacPos[1]) and wall(pacPos[0]-1,pacPos[1]) and
-wall(pacPos[0],pacPos[1]+1):
+        elif wall(pacPos[0]+1,pacPos[1]) and wall(pacPos[0]-1,pacPos[1]) and wall(pacPos[0],pacPos[1]+1):
             trapped_lst = observedState.getLegalPacmanActions()
             trapped_lst.remove(Directions.STOP)
             self.trapped_dir = trapped_lst[np.random.randint(len(trapped_lst))]
             return self.trapped_dir
-        elif wall(pacPos[0],pacPos[1]+1) and wall(pacPos[0],pacPos[1]-1) and
-wall(pacPos[0]+1,pacPos[1]):
+        elif wall(pacPos[0],pacPos[1]+1) and wall(pacPos[0],pacPos[1]-1) and wall(pacPos[0]+1,pacPos[1]):
             trapped_lst = observedState.getLegalPacmanActions()
             trapped_lst.remove(Directions.STOP)
             self.trapped_dir = trapped_lst[np.random.randint(len(trapped_lst))]
             return self.trapped_dir
-        elif wall(pacPos[0],pacPos[1]+1) and wall(pacPos[0],pacPos[1]-1) and
-wall(pacPos[0]-1,pacPos[1]):
+        elif wall(pacPos[0],pacPos[1]+1) and wall(pacPos[0],pacPos[1]-1) and wall(pacPos[0]-1,pacPos[1]):
             trapped_lst = observedState.getLegalPacmanActions()
             trapped_lst.remove(Directions.STOP)
             self.trapped_dir = trapped_lst[np.random.randint(len(trapped_lst))]
-            return self.trapped_dir
+            return self.trapped_dir    
 
 
         feat_v = self.get_regression_feature(self.prev_state, self.prev_action)
-        target_sa = self.get_target(observedState, self.prev_state,
-self.prev_action)
+        target_sa = self.get_target(observedState, self.prev_state, self.prev_action)
 
         prevQ = self.Q_sa(self.prev_state, self.prev_action)
         for j in range(self.J):
@@ -599,15 +573,14 @@ self.prev_action)
                 self.thetas[j] = candi
             elif candi <= 0:
                 self.thetas[j] = candi
-
+        
         self.prev_state = observedState
 
         epsilon = 1/self.t
         if np.random.rand() < 1. - epsilon:
             self.prev_action = self.optimal_action
         else:
-            self.prev_action =
-observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
+            self.prev_action = observedState.getLegalPacmanActions()[np.random.randint(len(observedState.getLegalPacmanActions()))]
         self.prev_score = observedState.getScore()
         self.t += self.dt
         # print self.thetas
