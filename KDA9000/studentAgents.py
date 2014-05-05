@@ -335,6 +335,7 @@ class heuristicsAgent(BaseStudentAgent):
             successor_pos = Actions.getSuccessor(pacmanPosition, best_action)
 
             if manhattanDistance(successor_pos, bad_ghost_pos) < 2:
+
                 possible_actions = []
                 for move in legal_actions:
                     if move == Directions.STOP:
@@ -345,8 +346,8 @@ class heuristicsAgent(BaseStudentAgent):
                 lst_len = len(possible_actions)
                 if lst_len > 0:
                     best_action = possible_actions[np.random.randint(lst_len)]
-        return best_action
-                    
+            return best_action
+
 
                 
             
