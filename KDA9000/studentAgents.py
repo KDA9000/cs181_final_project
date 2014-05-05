@@ -330,7 +330,7 @@ class heuristicsAgent(BaseStudentAgent):
                     best_dist_to_cap = dist_to_cap
                 self.prev_action = best_action
                 return best_action
-                    
+    
                 
             
             
